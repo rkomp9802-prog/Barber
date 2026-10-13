@@ -1,0 +1,9 @@
+# Минимальная конфигурация Supabase CLI для Edge Functions этого проекта.
+# Схемой БД управляет Prisma (apps/api), здесь только функции и cron-миграция.
+project_id = "barber"
+
+[functions.notifications]
+enabled = true
+# JWT Supabase не проверяем: функцию вызывает pg_cron, а доступ закрыт
+# собственным заголовком «Authorization: Bearer <CRON_SECRET>» (см. index.ts).
+verify_jwt = false

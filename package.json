@@ -1,0 +1,21 @@
+{
+  "name": "barber",
+  "private": true,
+  "description": "Учебная система записи для барбершопа: сайт, Mini App, API, бот и админка",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @barber/web",
+    "dev:api": "npm run dev -w @barber/api",
+    "build": "npm run build -w @barber/web",
+    "start": "npm run start -w @barber/web",
+    "test": "npm run test --workspaces --if-present",
+    "test:functions": "vitest run --root supabase",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

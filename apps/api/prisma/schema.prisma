@@ -1,0 +1,251 @@
+// Схема базы барбершопа (spec-final.md §5).
+// Имена таблиц и колонок — snake_case: их читают и другие части системы (Edge Function через SQL).
+// Всё, чего Prisma не умеет описать (btree_gist, generated time_range, EXCLUDE, CHECK, RLS),
+// лежит в SQL-миграции 0002_booking_constraints.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Barber {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  role            String   @default("")
+  photoUrl        String?  @map("photo_url")
+  bio             String   @default("")
+  experienceYears Int      @default(0) @map("experience_years")
+  telegramChatId  BigInt?  @map("telegram_chat_id")
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  portfolio    PortfolioItem[]
+  services     BarberService[]
+  workingHours WorkingHour[]
+  breaks       Break[]
+  timeOff      TimeOff[]
+  bookings     Booking[]
+  reviews      Review[]
+  linkCodes    BarberLinkCode[]
+
+  @@map("barbers")
+}
+
+model PortfolioItem {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberId  String @map("barber_id") @db.Uuid
+  imageUrl  String @map("image_url")
+  sortOrder Int    @default(0) @map("sort_order")
+
+  barber Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@index([barberId])
+  @@map("portfolio_items")
+}
+
+model Service {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String   @default("")
+  durationMin Int      @map("duration_min")
+  price       Int
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  barbers         BarberService[]
+  bookingServices BookingService[]
+
+  @@map("services")
+}
+
+/// Какие услуги делает барбер; duration_min/price = null → берутся из services.
+model BarberService {
+  barberId    String  @map("barber_id") @db.Uuid
+  serviceId   String  @map("service_id") @db.Uuid
+  durationMin Int?    @map("duration_min")
+  price       Int?
+  isEnabled   Boolean @default(true) @map("is_enabled")
+
+  barber  Barber  @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([barberId, serviceId])
+  @@index([serviceId])
+  @@map("barber_services")
+}
+
+/// Недельный график. weekday: 0 = воскресенье … 6 = суббота; время 'HH:MM' по Ташкенту.
+model WorkingHour {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberId  String @map("barber_id") @db.Uuid
+  weekday   Int
+  startTime String @map("start_time")
+  endTime   String @map("end_time")
+
+  barber Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@index([barberId, weekday])
+  @@map("working_hours")
+}
+
+/// Регулярные перерывы (обед) по дням недели.
+model Break {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberId  String @map("barber_id") @db.Uuid
+  weekday   Int
+  startTime String @map("start_time")
+  endTime   String @map("end_time")
+
+  barber Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@index([barberId, weekday])
+  @@map("breaks")
+}
+
+/// Исключения: выходной, отпуск, больничный. barber_id = null — закрыт весь барбершоп.
+model TimeOff {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  barberId String?  @map("barber_id") @db.Uuid
+  startsAt DateTime @map("starts_at") @db.Timestamptz(6)
+  endsAt   DateTime @map("ends_at") @db.Timestamptz(6)
+  type     String   @default("other")
+  note     String?
+
+  barber Barber? @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@index([barberId, startsAt])
+  @@map("time_off")
+}
+
+model Client {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  phone          String?
+  telegramId     BigInt?  @unique @map("telegram_id")
+  telegramChatId BigInt?  @map("telegram_chat_id")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  bookings Booking[]
+  reviews  Review[]
+
+  @@index([phone])
+  @@map("clients")
+}
+
+/// status: confirmed | completed | cancelled | no_show; source: web | telegram | admin (CHECK в SQL).
+model Booking {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clientId           String    @map("client_id") @db.Uuid
+  barberId           String    @map("barber_id") @db.Uuid
+  startsAt           DateTime  @map("starts_at") @db.Timestamptz(6)
+  endsAt             DateTime  @map("ends_at") @db.Timestamptz(6)
+  totalPrice         Int       @map("total_price")
+  totalDurationMin   Int       @map("total_duration_min")
+  status             String    @default("confirmed")
+  source             String    @default("web")
+  manageToken        String    @unique @map("manage_token")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reminderDaySentAt  DateTime? @map("reminder_day_sent_at") @db.Timestamptz(6)
+  reminder30mSentAt  DateTime? @map("reminder_30m_sent_at") @db.Timestamptz(6)
+  reviewRequestedAt  DateTime? @map("review_requested_at") @db.Timestamptz(6)
+  autoCompletedAt    DateTime? @map("auto_completed_at") @db.Timestamptz(6)
+  /// GENERATED ALWAYS AS tstzrange(starts_at, ends_at, '[)') STORED — создаётся SQL-миграцией.
+  timeRange          Unsupported("tstzrange")? @map("time_range")
+
+  client   Client           @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  barber   Barber           @relation(fields: [barberId], references: [id], onDelete: Restrict)
+  services BookingService[]
+  review   Review?
+
+  @@index([barberId, startsAt])
+  @@index([status, startsAt])
+  @@index([clientId])
+  @@map("bookings")
+}
+
+/// Снимок услуги на момент записи: цена/длительность не меняются задним числом.
+model BookingService {
+  bookingId   String @map("booking_id") @db.Uuid
+  serviceId   String @map("service_id") @db.Uuid
+  name        String
+  durationMin Int    @map("duration_min")
+  price       Int
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@id([bookingId, serviceId])
+  @@map("booking_services")
+}
+
+model Review {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookingId String   @unique @map("booking_id") @db.Uuid
+  barberId  String   @map("barber_id") @db.Uuid
+  clientId  String   @map("client_id") @db.Uuid
+  rating    Int
+  comment   String?
+  isPublic  Boolean  @default(true) @map("is_public")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  barber  Barber  @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([barberId])
+  @@index([rating, createdAt])
+  @@map("reviews")
+}
+
+model Setting {
+  key   String @id
+  value Json
+
+  @@map("settings")
+}
+
+model AdminUser {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  login          String   @unique
+  passwordHash   String   @map("password_hash")
+  telegramChatId BigInt?  @map("telegram_chat_id")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  sessions AdminSession[]
+
+  @@map("admin_users")
+}
+
+model AdminSession {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminUserId String   @map("admin_user_id") @db.Uuid
+  tokenHash   String   @unique @map("token_hash")
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  adminUser AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId])
+  @@map("admin_sessions")
+}
+
+/// Одноразовые коды привязки барбера к Telegram (t.me/<bot>?start=barber_<code>).
+model BarberLinkCode {
+  code      String    @id
+  barberId  String    @map("barber_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+
+  barber Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@index([barberId])
+  @@map("barber_link_codes")
+}

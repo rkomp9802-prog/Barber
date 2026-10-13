@@ -1,0 +1,671 @@
+/* Значения по умолчанию переопределяются из themeParams Telegram (src/theme.ts). */
+:root {
+  --tg-bg: #ffffff;
+  --tg-text: #000000;
+  --tg-hint: #707579;
+  --tg-link: #2481cc;
+  --tg-button: #2481cc;
+  --tg-button-text: #ffffff;
+  --tg-secondary-bg: #f1f1f4;
+  --tg-section-bg: #ffffff;
+  --tg-destructive: #e53935;
+  --tg-accent: #2481cc;
+
+  --radius: 12px;
+  --radius-small: 10px;
+  --gap: 12px;
+  --touch: 48px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --tint-accent: color-mix(in srgb, var(--tg-button) 14%, transparent);
+  --tint-danger: color-mix(in srgb, var(--tg-destructive) 14%, transparent);
+  --separator: color-mix(in srgb, var(--tg-hint) 22%, transparent);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--tg-secondary-bg);
+  color: var(--tg-text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--tg-button);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.muted,
+.hint {
+  color: var(--tg-hint);
+}
+
+.hint {
+  margin: 0 4px 10px;
+  font-size: 14px;
+}
+
+/* ---------- Экран ---------- */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: var(--tg-viewport-stable-height, 100dvh);
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.screen-header {
+  padding: 16px 16px 8px;
+}
+
+.screen-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.screen-subtitle {
+  margin: 0 0 2px;
+  color: var(--tg-hint);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.screen-body {
+  flex: 1;
+  padding: 8px 16px 24px;
+}
+
+.back-link {
+  min-height: 44px;
+  margin: -8px 0 4px -8px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  color: var(--tg-link);
+}
+
+.dev-banner {
+  padding: 8px 16px;
+  background: var(--tint-accent);
+  color: var(--tg-text);
+  font-size: 13px;
+}
+
+/* ---------- Главная ---------- */
+
+.home-header {
+  padding: 32px 16px 20px;
+  text-align: center;
+}
+
+.home-header .muted {
+  margin: 6px 0 0;
+}
+
+.home-logo {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: var(--tg-button);
+  color: var(--tg-button-text);
+  font-size: 34px;
+}
+
+.home-actions {
+  display: grid;
+  gap: var(--gap);
+  padding: 0 16px 24px;
+}
+
+.home-action {
+  display: grid;
+  gap: 4px;
+  min-height: 88px;
+  padding: 18px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--tg-section-bg);
+  text-align: left;
+  transition: transform 120ms ease;
+}
+
+.home-action:active {
+  transform: scale(0.98);
+}
+
+.home-action-primary {
+  background: var(--tg-button);
+  color: var(--tg-button-text);
+}
+
+.home-action-title {
+  font-size: 19px;
+  font-weight: 650;
+}
+
+.home-action-text {
+  font-size: 14px;
+  opacity: 0.75;
+}
+
+/* ---------- Списки выбора ---------- */
+
+.list {
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--tg-section-bg);
+}
+
+.choice-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--separator);
+  background: transparent;
+  text-align: left;
+}
+
+.choice-row:last-child {
+  border-bottom: 0;
+}
+
+.choice-row:active {
+  background: var(--tint-accent);
+}
+
+.choice-text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.choice-title {
+  font-weight: 560;
+}
+
+.choice-subtitle {
+  color: var(--tg-hint);
+  font-size: 14px;
+}
+
+.choice-meta {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.price {
+  font-weight: 600;
+}
+
+.choice-mark {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--separator);
+  border-radius: 50%;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.choice-mark-checkbox {
+  border-radius: 6px;
+}
+
+.is-selected .choice-mark {
+  border-color: var(--tg-button);
+  background: var(--tg-button);
+  box-shadow: inset 0 0 0 3px var(--tg-section-bg);
+}
+
+.avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--tint-accent);
+  color: var(--tg-accent);
+  font-weight: 650;
+}
+
+/* ---------- Дата и время ---------- */
+
+.date-grid,
+.time-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.date-grid {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.time-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.date-chip,
+.time-chip {
+  min-height: var(--touch);
+  border: 0;
+  border-radius: var(--radius-small);
+  background: var(--tg-section-bg);
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+
+.date-chip {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  min-height: 60px;
+  padding: 6px 0;
+}
+
+.date-weekday {
+  color: var(--tg-hint);
+  font-size: 12px;
+}
+
+.date-day {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.time-chip {
+  font-weight: 560;
+  font-variant-numeric: tabular-nums;
+}
+
+.date-chip:active,
+.time-chip:active {
+  transform: scale(0.96);
+}
+
+.date-chip:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.date-chip.is-selected,
+.time-chip.is-selected {
+  background: var(--tg-button);
+  color: var(--tg-button-text);
+}
+
+.date-chip.is-selected .date-weekday {
+  color: inherit;
+  opacity: 0.8;
+}
+
+/* ---------- Форма ---------- */
+
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field-label {
+  margin-left: 4px;
+  color: var(--tg-hint);
+  font-size: 14px;
+}
+
+.input {
+  min-height: var(--touch);
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-small);
+  background: var(--tg-section-bg);
+  font-size: 17px;
+}
+
+.input:focus {
+  border-color: var(--tg-button);
+  outline: none;
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--tg-destructive);
+}
+
+.field-error,
+.field-hint {
+  margin: 0 4px;
+  font-size: 13px;
+}
+
+.field-error {
+  color: var(--tg-destructive);
+}
+
+.field-hint {
+  color: var(--tg-hint);
+}
+
+/* ---------- Сводка ---------- */
+
+.summary-list {
+  margin: 0 0 12px;
+  padding: 4px 14px;
+  border-radius: var(--radius);
+  background: var(--tg-section-bg);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--separator);
+}
+
+.summary-row:last-child {
+  border-bottom: 0;
+}
+
+.summary-row dt {
+  color: var(--tg-hint);
+}
+
+.summary-row dd {
+  margin: 0;
+  text-align: right;
+}
+
+.success {
+  display: grid;
+  gap: 12px;
+  text-align: center;
+}
+
+.success .summary-list {
+  text-align: left;
+}
+
+.success-icon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin: 8px auto 0;
+  border-radius: 50%;
+  background: var(--tg-button);
+  color: var(--tg-button-text);
+  font-size: 36px;
+}
+
+.success-text {
+  margin: 0;
+  color: var(--tg-hint);
+}
+
+/* ---------- Нижняя панель ---------- */
+
+.bottom-bar {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  gap: 10px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--separator);
+  background: var(--tg-bg);
+}
+
+.bottom-summary {
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ---------- Кнопки ---------- */
+
+.btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-small);
+  font-weight: 600;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn-block {
+  width: 100%;
+  min-height: var(--touch);
+}
+
+.btn-primary {
+  background: var(--tg-button);
+  color: var(--tg-button-text);
+}
+
+.btn-secondary {
+  background: var(--tint-accent);
+  color: var(--tg-link);
+}
+
+.btn-danger {
+  background: var(--tint-danger);
+  color: var(--tg-destructive);
+}
+
+/* ---------- Состояния ---------- */
+
+.state {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 28px 16px;
+  text-align: center;
+}
+
+.state p {
+  margin: 0;
+}
+
+.state-title {
+  font-weight: 600;
+}
+
+.state-error p {
+  color: var(--tg-destructive);
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-small);
+  font-size: 15px;
+}
+
+.notice span {
+  flex: 1;
+}
+
+.notice-warning,
+.notice-danger {
+  background: var(--tint-danger);
+}
+
+.notice-info {
+  background: var(--tint-accent);
+}
+
+.notice-close {
+  min-width: 32px;
+  min-height: 32px;
+  margin: -6px -8px -6px 0;
+  border: 0;
+  background: none;
+  color: var(--tg-hint);
+  font-size: 20px;
+}
+
+.skeleton-list {
+  display: grid;
+  gap: 8px;
+}
+
+.skeleton-chip {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.skeleton {
+  height: 60px;
+  border-radius: var(--radius-small);
+  background: var(--tg-section-bg);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.skeleton-chip .skeleton {
+  height: var(--touch);
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ---------- Мои записи ---------- */
+
+.booking-list {
+  display: grid;
+  gap: var(--gap);
+}
+
+.booking-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--tg-section-bg);
+}
+
+.booking-card p {
+  margin: 0;
+}
+
+.booking-card.is-past {
+  opacity: 0.7;
+}
+
+.booking-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.booking-when {
+  font-weight: 650;
+}
+
+.booking-services {
+  font-size: 15px;
+}
+
+.booking-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.badge {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-accent {
+  background: var(--tint-accent);
+  color: var(--tg-accent);
+}
+
+.badge-success {
+  background: color-mix(in srgb, #31b545 16%, transparent);
+  color: #2a9d3c;
+}
+
+.badge-muted {
+  background: var(--separator);
+  color: var(--tg-hint);
+}
+
+.badge-danger {
+  background: var(--tint-danger);
+  color: var(--tg-destructive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

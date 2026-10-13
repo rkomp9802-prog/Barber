@@ -1,0 +1,184 @@
+/* Страница управления записью: карточка, панели действий и уведомления. */
+.stack {
+  display: grid;
+  gap: 20px;
+  max-width: 720px;
+  margin: 32px auto 64px;
+}
+
+/* ---------- Карточка записи ---------- */
+.card {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+}
+
+.title {
+  font-size: clamp(28px, 4vw, 36px);
+  line-height: 1.15;
+}
+
+.status {
+  justify-self: start;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.statusActive {
+  background: color-mix(in srgb, var(--success) 18%, var(--bg-elevated));
+  color: var(--success);
+}
+
+.statusDone {
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg-elevated));
+  color: var(--accent-strong);
+}
+
+.facts {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.facts div {
+  display: grid;
+  gap: 2px;
+}
+
+.facts dt {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.services {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.services li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.muted {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.totalPrice {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Панели действий ---------- */
+.panel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+
+.panelTitle {
+  font-size: 24px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.actions .btn {
+  flex: 1 1 180px;
+}
+
+.danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+}
+
+.btnDanger {
+  background: var(--danger);
+  color: var(--accent-contrast);
+}
+
+.btnDanger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 85%, #000);
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Уведомления и ошибки ---------- */
+.notice {
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
+  line-height: 1.5;
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.link {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+/* Блок выбора даты и времени внутри панели переноса. */
+.group {
+  display: grid;
+  gap: 18px;
+}

@@ -1,0 +1,216 @@
+/* Hero лендинга: заголовок, CTA, статистика и декоративный постер. */
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 40px 0 72px;
+  background:
+    radial-gradient(60% 50% at 85% 20%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+    var(--bg);
+}
+
+.heroGrid {
+  display: grid;
+  gap: 48px;
+  align-items: center;
+}
+
+.heroCopy {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+}
+
+.heroTitle {
+  font-size: clamp(40px, 10vw, 84px);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+}
+
+.heroTitle em {
+  font-style: normal;
+  color: var(--accent);
+  background: linear-gradient(transparent 82%, color-mix(in srgb, var(--accent) 25%, transparent) 82%);
+}
+
+.heroLead {
+  max-width: 460px;
+  color: var(--text-muted);
+  font-size: 17px;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 12px 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  padding: 16px 12px 0 0;
+}
+
+.stat + .stat {
+  padding-left: 14px;
+  border-left: 1px solid var(--border);
+}
+
+.statValue {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 6vw, 40px);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: lining-nums;
+}
+
+.statLabel {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Декоративная композиция: постер с полосами барбер-полла. */
+.heroArt {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding-bottom: 28px;
+}
+
+.poster {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  padding: 14px;
+  border: 1px solid var(--accent);
+  border-radius: 200px 200px var(--radius) var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+  transform: rotate(-2deg);
+}
+
+.posterStripes {
+  position: absolute;
+  inset: 14px;
+  border-radius: 190px 190px var(--radius-sm) var(--radius-sm);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      var(--accent) 0 18px,
+      transparent 18px 30px,
+      color-mix(in srgb, var(--accent) 35%, transparent) 30px 36px,
+      transparent 36px 48px
+    ),
+    var(--bg-muted);
+}
+
+.posterMedallion {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  width: 58%;
+  aspect-ratio: 1;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  outline: 6px solid var(--bg-elevated);
+  background: var(--bg-elevated);
+  text-align: center;
+  transform: translate(-50%, -50%) rotate(2deg);
+}
+
+.posterEst,
+.posterCity {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.posterName {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 9vw, 52px);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.heroBadge {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 16px);
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+  font-size: 15px;
+  animation: float 6s ease-in-out infinite;
+}
+
+.heroBadge strong {
+  display: block;
+}
+
+.heroBadgeLabel {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.heroBadgeDot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 22%, transparent);
+}
+
+@keyframes float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (min-width: 640px) {
+  .heroBadge {
+    left: -24px;
+  }
+}
+
+@media (min-width: 900px) {
+  .hero {
+    padding: 72px 0 112px;
+  }
+
+  .heroGrid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: 64px;
+  }
+
+  .heroArt {
+    max-width: 440px;
+    margin-right: 0;
+  }
+}

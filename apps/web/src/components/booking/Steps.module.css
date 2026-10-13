@@ -1,0 +1,344 @@
+/* Содержимое шагов: карточки выбора, ленты дат, сетка времени, форма. */
+.stack {
+  display: grid;
+  gap: 18px;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---------- Карточка выбора (услуга / барбер) ---------- */
+.option {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.option:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: var(--shadow);
+}
+
+.option:active {
+  transform: scale(0.995);
+}
+
+.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg-elevated));
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.optionBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.optionTitle {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.optionText {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.optionMeta {
+  grid-column: 2;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.price {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.duration {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Галочка-«печать»: пустой круг → латунный круг с отметкой. */
+.check {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 2px;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.selected .check {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.selected .check::after {
+  content: '';
+  width: 10px;
+  height: 6px;
+  margin-top: -2px;
+  border-bottom: 2px solid var(--accent-contrast);
+  border-left: 2px solid var(--accent-contrast);
+  transform: rotate(-45deg);
+}
+
+.totals {
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+/* ---------- Барберы ---------- */
+.barber {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.rating {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.anyMark {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1.5px dashed var(--accent);
+  border-radius: 50%;
+  color: var(--accent);
+  font-size: 22px;
+}
+
+/* ---------- Пустые состояния и ошибки ---------- */
+.notice {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 24px 20px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-muted);
+}
+
+.noticeError {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger) 7%, var(--bg-elevated));
+}
+
+.noticeTitle {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+}
+
+/* ---------- Даты ---------- */
+.days {
+  display: flex;
+  gap: 8px;
+  margin: 0 calc(-1 * var(--gutter));
+  padding: 4px var(--gutter) 12px;
+  overflow-x: auto;
+  list-style: none;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.day {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 76px;
+  min-height: 96px;
+  padding: 12px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.day:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.day:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.dayWeek {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dayNum {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.dayMonth {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.day.selected {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  box-shadow: var(--shadow);
+}
+
+.day.selected .dayWeek,
+.day.selected .dayMonth {
+  color: inherit;
+}
+
+/* ---------- Время ---------- */
+.daySwitcher {
+  display: grid;
+  grid-template-columns: var(--tap) minmax(0, 1fr) var(--tap);
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.daySwitcherLabel {
+  font-family: var(--font-display);
+  font-size: 19px;
+  text-align: center;
+}
+
+.daySwitcherLabel::first-letter {
+  text-transform: uppercase;
+}
+
+.arrow {
+  width: var(--tap);
+  height: var(--tap);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.arrow:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.arrow:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.slot {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.slot:hover {
+  border-color: var(--accent);
+}
+
+.slot.selected {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.skeleton {
+  height: 52px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-elevated) 50%, var(--bg-muted) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .option {
+    padding: 20px 22px;
+  }
+
+  .optionMeta {
+    grid-column: auto;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .option:not(.barber) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+}

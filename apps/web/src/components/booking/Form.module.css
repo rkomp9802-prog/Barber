@@ -1,0 +1,109 @@
+/* Форма контактов и карточка подтверждения. */
+/* ---------- Контакты ---------- */
+.form {
+  display: grid;
+  gap: 18px;
+  max-width: 480px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  font-size: 17px;
+  transition: border-color 0.15s ease;
+}
+
+.input:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.fieldHint {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.fieldError,
+.formError {
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.formError {
+  font-size: 15px;
+}
+
+/* ---------- Подтверждение ---------- */
+.review {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+}
+
+.reviewMeta {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+}
+
+.reviewMeta div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reviewMeta dt {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.reviewMeta dd {
+  display: grid;
+  margin: 0;
+  text-align: right;
+}
+
+.reviewPhone {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.price {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.stack {
+  display: grid;
+  gap: 18px;
+}
