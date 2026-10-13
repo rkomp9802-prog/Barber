@@ -1,11 +1,11 @@
 import type { CSSProperties } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 
 import { plural, type BarberDto } from '@barber/shared'
 
 import { shop } from '@/data/shop'
 
+import { HeroVideo } from './HeroVideo'
 import styles from './Hero.module.css'
 
 type Stat = {
@@ -35,15 +35,13 @@ function buildStats(barbers: readonly BarberDto[]): Stat[] {
   ]
 }
 
-/* Заголовок в две колонки по бокам от головы: слева «СТРИЖКА, / ПОСЛЕ КОТОРОЙ»,
-   справа «НЕ НУЖНО / НИЧЕГО ПОПРАВЛЯТЬ». На мобильном колонки складываются в один столбец. */
-const titleLeft: readonly string[] = ['Стрижка,', 'после которой']
-const titleRight: readonly { text: string; accent?: boolean }[] = [
-  { text: 'не нужно', accent: true },
-  { text: 'ничего поправлять' },
+/* Заголовок по центру, две строки. Слово «не нужно» — оранжевым. */
+const titleLines: readonly (readonly { text: string; accent?: boolean }[])[] = [
+  [{ text: 'Стрижка, после которой' }],
+  [{ text: 'не нужно', accent: true }, { text: ' ничего поправлять' }],
 ]
 
-/** Индекс строки для стаггера анимации: левая колонка, затем правая. */
+/** Индекс строки для стаггера анимации. */
 const lineStyle = (index: number): CSSProperties => ({ '--line': index }) as CSSProperties
 
 type Props = {
@@ -55,37 +53,21 @@ export function Hero({ barbers }: Props) {
 
   return (
     <section className={styles.hero} aria-labelledby="hero-title">
-      <Image src="/stock/hero-bg.webp" alt="" fill preload sizes="100vw" className={styles.bg} />
+      <HeroVideo className={styles.video} />
       <div className={styles.shade} aria-hidden="true" />
       <span className={styles.watermark} aria-hidden="true">
         {shop.name}
       </span>
 
       <div className={`container ${styles.inner}`}>
-        <div className={styles.figure}>
-          <Image
-            src="/stock/hero-portrait.webp"
-            alt="Стрижка в барбершопе Sharp"
-            fill
-            preload
-            sizes="(min-width: 900px) 40vw, 80vw"
-            className={styles.portrait}
-          />
-        </div>
-
         <h1 id="hero-title" className={styles.heroTitle} aria-label="Стрижка, после которой не нужно ничего поправлять">
-          <span className={styles.colLeft} aria-hidden="true">
-            {titleLeft.map((text, i) => (
-              <span key={text} className={styles.heroLine} style={lineStyle(i)}>
-                <span className={styles.heroLineInner}>{text}</span>
-              </span>
-            ))}
-          </span>
-          <span className={styles.colRight} aria-hidden="true">
-            {titleRight.map((line, i) => (
-              <span key={line.text} className={styles.heroLine} style={lineStyle(titleLeft.length + i)}>
+          <span className={styles.titleText} aria-hidden="true">
+            {titleLines.map((parts, i) => (
+              <span key={i} className={styles.heroLine} style={lineStyle(i)}>
                 <span className={styles.heroLineInner}>
-                  {line.accent ? <em>{line.text}</em> : line.text}
+                  {parts.map(part =>
+                    part.accent ? <em key={part.text}>{part.text}</em> : <span key={part.text}>{part.text}</span>,
+                  )}
                 </span>
               </span>
             ))}
