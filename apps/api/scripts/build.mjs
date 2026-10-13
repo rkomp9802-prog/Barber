@@ -3,7 +3,7 @@
 //  - .vercel/output/** — Vercel Build Output API v3: одна Node-функция на все маршруты.
 // Бандл нужен, потому что @barber/shared поставляется как исходники TypeScript.
 import { build } from 'esbuild'
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -18,7 +18,8 @@ const common = {
   format: 'esm',
   sourcemap: true,
   logLevel: 'info',
-  // Нативные модули, которые API не использует в рантайме (argon2 нужен только seed).
+  // pg-native API не использует. @node-rs/argon2 — нативный модуль (вход в админку),
+  // его не бандлим, а копируем в функцию: см. copyArgon2.
   external: ['pg-native', '@node-rs/argon2'],
   banner: {
     js: "import { createRequire as __createRequire } from 'node:module'; const require = __createRequire(import.meta.url);",
@@ -37,8 +38,22 @@ async function buildVercel() {
   await build({ ...common, entryPoints: [path.join(root, 'api/index.ts')], outfile: path.join(funcDir, 'index.mjs') })
   const vcConfig = { runtime: NODE_RUNTIME, handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: false }
   await writeFile(path.join(funcDir, '.vc-config.json'), JSON.stringify(vcConfig, null, 2))
+  await copyArgon2(funcDir)
   const config = { version: 3, routes: [{ src: '/(.*)', dest: '/index' }] }
   await writeFile(path.join(output, 'config.json'), JSON.stringify(config, null, 2))
+}
+
+/**
+ * Кладёт @node-rs/argon2 и установленный бинарник платформы (на Vercel — linux-x64-gnu)
+ * в node_modules функции: без них POST /admin/login падает с «Cannot find module».
+ */
+async function copyArgon2(funcDir) {
+  const scopeDir = path.join(root, '../../node_modules/@node-rs')
+  const packages = (await readdir(scopeDir)).filter(name => name === 'argon2' || name.startsWith('argon2-'))
+  if (!packages.includes('argon2')) throw new Error('@node-rs/argon2 не установлен — вход в админку не заработает')
+  for (const name of packages) {
+    await cp(path.join(scopeDir, name), path.join(funcDir, 'node_modules/@node-rs', name), { recursive: true })
+  }
 }
 
 await buildServer()

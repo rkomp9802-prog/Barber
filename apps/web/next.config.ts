@@ -18,11 +18,23 @@ function storagePatterns(): RemotePattern[] {
   ]
 }
 
+/**
+ * В продакшене браузер ходит в API через сайт (/api/v1 → API_URL): так cookie сессии админки
+ * остаётся своей для домена сайта, а не сторонней (Safari и др. блокируют сторонние cookie).
+ * Для этого NEXT_PUBLIC_API_URL = адрес самого сайта, API_URL = адрес API.
+ */
+async function apiRewrites() {
+  const target = process.env.API_URL?.trim().replace(/\/+$/, '')
+  if (!target) return []
+  return [{ source: '/api/v1/:path*', destination: `${target}/api/v1/:path*` }]
+}
+
 const nextConfig: NextConfig = {
   transpilePackages: ['@barber/shared'],
   images: {
     remotePatterns: storagePatterns(),
   },
+  rewrites: apiRewrites,
 }
 
 export default nextConfig
