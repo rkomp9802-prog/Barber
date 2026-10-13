@@ -3,6 +3,14 @@
   gap: 16px;
 }
 
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .title {
   font-size: clamp(26px, 4vw, 34px);
 }

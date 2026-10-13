@@ -5,12 +5,21 @@
 
 ## Что уже готово
 
+Статусы: ✅ готово; 🟡 код готов, но нужна база или внешний аккаунт (Supabase, бот, Vercel); ❌ не начато.
+
 | Этап | Что сделано | Статус |
 |---|---|---|
-| 1. Сайт | Лендинг: шапка, hero, услуги и цены, барберы, отзывы, контакты и карта, светлая/тёмная тема | ✅ |
-| 2. Интерфейс записи | `/book`: услуга → барбер → дата → время → контакты → подтверждение на тестовых данных | ✅ |
-| 3. База данных | Supabase + Prisma | ⏳ нужен проект Supabase |
-| 4–11 | Backend, настоящая запись, Mini App, бот, напоминания, админка, аналитика, деплой | ⏳ |
+| 1. Сайт | Лендинг: шапка, hero, услуги, барберы, отзывы, контакты и карта, светлая/тёмная тема | ✅ |
+| 2. Интерфейс записи | `/book`: услуга → барбер → дата → время → контакты → подтверждение; без API работает на демо-данных | ✅ |
+| 3. База данных | Prisma-схема, миграции `0001_init` и `0002_booking_constraints`, seed. Нужны проект Supabase и `DATABASE_URL` | 🟡 |
+| 4. Backend | Fastify API `/api/v1`: услуги, барберы, health, CORS, единая обработка ошибок. Сайт берёт каталог из API | 🟡 |
+| 5. Настоящая запись | Расчёт слотов (обеды, time_off, записи, min_notice, horizon), защита от двойной записи (`btree_gist`, `23P01` → `409`), отмена и перенос, страница `/booking/[token]` | 🟡 |
+| 6. Telegram Mini App | `apps/miniapp` на React + Vite: все шаги записи, «Мои записи», отмена, перенос, проверка `initData` на API | 🟡 |
+| 7. Telegram-бот | grammY: `/start`, webhook, меню, deep link `b_<token>`, привязка клиента и барбера, уведомления о записи, отмене и переносе | 🟡 |
+| 8. Напоминания | Edge Function `notifications` (напоминания за день и за 30 минут, автозавершение, просьба об отзыве), идемпотентность, миграция с `pg_cron` | 🟡 |
+| 9. Админка | Вход с Argon2 и httpOnly-cookie, список и карточка записей, ручная запись, управление услугами, барберами, графиком, обедами, выходными, отзывами и настройками | 🟡 |
+| 10. Аналитика | Выручка, загрузка барберов, популярные услуги, отмены, неявки, возвращаемость, heatmap; расчёты сверены на тестовом наборе | 🟡 |
+| 11. Деплой | Vercel, production API, Telegram webhook, Supabase Cron в облаке | ❌ |
 
 ## Запуск
 
@@ -18,10 +27,14 @@
 
 ```bash
 npm install
+```
+
+```bash
 npm run dev
 ```
 
-Сайт откроется на http://localhost:3000, запись — на http://localhost:3000/book.
+- Сайт: http://localhost:3000, запись: http://localhost:3000/book.
+- Без API сайт показывает демо-данные из `apps/web/src/data`.
 
 Демо-режимы страницы записи:
 
@@ -29,27 +42,73 @@ npm run dev
 - `/book?barber=timur` — барбер уже выбран;
 - `/book?demo=error` — показать состояние ошибки при загрузке времени.
 
+### API (нужна база)
+
+1. Скопируйте `apps/api/.env.example` в `apps/api/.env` и заполните `DATABASE_URL` и `DIRECT_URL` из Supabase.
+2. Один раз сгенерируйте Prisma Client:
+
+   ```bash
+   npm run db:generate -w @barber/api
+   ```
+
+3. Запустите API:
+
+   ```bash
+   npm run dev:api
+   ```
+
+   API откроется на http://localhost:4000 (проверка: http://localhost:4000/health).
+
+Миграции и тестовые данные: `npm run db:migrate -w @barber/api`, затем `npm run db:seed -w @barber/api`.
+Seed создаёт первого администратора по `ADMIN_LOGIN` и `ADMIN_PASSWORD` из `.env`.
+
+### Админка
+
+- Вход: http://localhost:3000/admin/login, панель: http://localhost:3000/admin.
+- Чтобы войти, нужен администратор из seed и запущенный API.
+
+### Mini App (по желанию)
+
+```bash
+npm run dev -w @barber/miniapp
+```
+
+Mini App откроется на http://localhost:5174. Внутри Telegram она работает только после настройки бота и HTTPS-адреса.
+
 ## Проверки
 
 ```bash
-npm run test       # unit-тесты (Vitest)
-npm run typecheck  # TypeScript
+npm run test       # unit-тесты всех пакетов (Vitest)
+npm run typecheck  # проверка типов во всех пакетах
 npm run build      # production-сборка сайта
 ```
+
+- Интеграционный тест записи (`apps/api/test/integration/booking-db.test.ts`) запускается только с `TEST_DATABASE_URL`. Без неё он пропускается. Таблицы в тестовой базе очищаются, поэтому используйте отдельную базу.
+- Тесты Edge Function: `npm run test:functions`.
 
 ## Структура
 
 ```text
 apps/
-  web/              Next.js: лендинг и /book (позже /booking/[token] и /admin)
-    src/app/        страницы
-    src/components/ landing/, booking/, ui/
-    src/data/       тестовые данные этапов 1–2 (на этапе 4 их заменит API)
+  web/              Next.js 16: лендинг, /book, /booking/[token], админка /admin
+  api/              Fastify + Prisma: REST API /api/v1, админ-API, Telegram-бот (grammY)
+    prisma/         схема, миграции, seed
+    src/routes/     публичные маршруты
+    src/admin/      админ-API (маршруты, сервисы, вход)
+    src/telegram/   бот и уведомления
+  miniapp/          Telegram Mini App на React + Vite
 packages/
   shared/           общие типы, формат цен/дат/телефонов, расчёт итогов записи
+supabase/
+  functions/notifications/   Edge Function: напоминания и просьба об отзыве
+  migrations/                pg_cron: запуск функции каждые 5 минут
 ```
 
-Позже появятся `apps/api` (Fastify), `apps/miniapp` (React + Vite), `packages/ui` и `supabase/functions`.
+## Что дальше
+
+1. Подключить Supabase (этап 3): создать проект, заполнить `apps/api/.env`, применить миграции, запустить seed.
+2. Проверить этапы 4–8 вживую: запись на сайте, двойную запись, Mini App и бота в Telegram, напоминания через Supabase Cron.
+3. Деплой на Vercel и настройка production-адресов (этап 11).
 
 ## Время и деньги
 

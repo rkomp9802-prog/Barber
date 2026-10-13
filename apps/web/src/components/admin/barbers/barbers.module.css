@@ -1,0 +1,441 @@
+/* ---------- Раздел «Барберы»: список и карточка барбера ---------- */
+.page {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.title {
+  font-size: clamp(26px, 4vw, 34px);
+  overflow-wrap: anywhere;
+}
+
+.heading {
+  display: grid;
+  gap: 4px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.back {
+  justify-self: start;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text-muted);
+}
+
+.back:hover {
+  color: var(--accent);
+}
+
+.strong {
+  font-weight: 700;
+}
+
+.subtle {
+  display: block;
+  font-size: 13px;
+}
+
+.hint {
+  font-size: 14px;
+}
+
+/* ---------- Список ---------- */
+.list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+
+.cardMain {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1 1 220px;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.cardMain:hover .strong {
+  color: var(--accent);
+}
+
+.cardInfo {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badgeOn {
+  color: var(--success);
+}
+
+.badgeOff {
+  color: var(--danger);
+}
+
+.badgeMuted {
+  color: var(--text-muted);
+}
+
+.dangerButton {
+  color: var(--danger);
+}
+
+.photo,
+.photoPlaceholder {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.photoPlaceholder {
+  display: grid;
+  place-items: center;
+  background: var(--bg-muted);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ---------- Блоки карточки ---------- */
+.panel {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+
+.panelHead {
+  display: grid;
+  gap: 4px;
+}
+
+.panelTitle {
+  font-size: 20px;
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.fields {
+  display: grid;
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.checkLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: var(--tap);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.checkLabel input {
+  width: 18px;
+  height: 18px;
+  margin-top: 13px;
+  flex: 0 0 18px;
+  accent-color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions .btn {
+  min-height: 40px;
+  padding: 0 18px;
+}
+
+.smallButton {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.notice {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.noticeOk {
+  color: var(--success);
+}
+
+.noticeError {
+  color: var(--danger);
+}
+
+/* ---------- Услуги ---------- */
+.serviceList {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.serviceRow {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.serviceRow .checkLabel input {
+  margin-top: 4px;
+}
+
+/* ---------- Фото ---------- */
+.photoRow {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+
+.photoLarge {
+  width: 120px;
+  height: 120px;
+  flex: 0 0 120px;
+  border-radius: var(--radius-sm);
+  font-size: 40px;
+}
+
+.photoControls {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+}
+
+.fileInput {
+  max-width: 100%;
+  font-size: 14px;
+}
+
+.uploadRow {
+  display: grid;
+  gap: 10px;
+}
+
+/* ---------- Расписание ---------- */
+.days {
+  display: grid;
+  gap: 12px;
+}
+
+.day {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.dayTitle {
+  font-size: 16px;
+  font-family: var(--font-body);
+  font-weight: 700;
+}
+
+.rangeGroup {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.rangeLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.rangeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.rangeRow .input {
+  min-height: 40px;
+  padding: 4px 8px;
+}
+
+/* ---------- Портфолио ---------- */
+.portfolioGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portfolioItem {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.portfolioImage {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: var(--bg-muted);
+}
+
+.portfolioActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ---------- Telegram ---------- */
+.linkCode {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+}
+
+.codeValue {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 22px;
+  letter-spacing: 0.1em;
+  color: var(--accent-strong);
+}
+
+.link {
+  color: var(--accent-strong);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Широкий экран ---------- */
+@media (min-width: 600px) {
+  .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .serviceRow {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .serviceRow .checkLabel input {
+    margin-top: 0;
+  }
+
+  .photoRow {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .uploadRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .portfolioGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .days {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portfolioGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

@@ -3,7 +3,7 @@ export type AdminNavItem = {
   label: string
 }
 
-/** Разделы боковой панели админки. Страницы, кроме «Записей», создаются отдельными этапами. */
+/** Разделы боковой панели админки.  */
 export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { href: '/admin/bookings', label: 'Записи' },
   { href: '/admin/services', label: 'Услуги' },
@@ -11,6 +11,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { href: '/admin/time-off', label: 'Исключения' },
   { href: '/admin/reviews', label: 'Отзывы' },
   { href: '/admin/settings', label: 'Настройки' },
+  { href: '/admin/analytics', label: 'Аналитика' },
 ]
 
 /** Раздел активен и на своей странице, и на вложенных (например, /admin/bookings/123). */

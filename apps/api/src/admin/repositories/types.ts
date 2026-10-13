@@ -205,6 +205,7 @@ export interface AdminSettingsRepository {
 export type AnalyticsBooking = {
   readonly id: string
   readonly barberId: string
+  readonly barberName: string
   readonly clientId: string
   readonly status: BookingStatus
   readonly startsAt: Date
@@ -236,4 +237,5 @@ export type AdminRepositories = {
   readonly bookings: AdminBookingRepository
   readonly reviews: AdminReviewRepository
   readonly settings: AdminSettingsRepository
+  readonly analytics: AnalyticsRepository
 }

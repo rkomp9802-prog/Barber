@@ -1,0 +1,271 @@
+.page {
+  display: grid;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  font-size: clamp(26px, 4vw, 34px);
+}
+
+.subtitle {
+  font-size: 18px;
+}
+
+.header .btn {
+  min-height: 40px;
+  padding: 0 18px;
+}
+
+.success,
+.error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.success {
+  border: 1px solid var(--success);
+  color: var(--success);
+}
+
+.error {
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
+.strong {
+  font-weight: 700;
+}
+
+/* ---------- Фильтры ---------- */
+.filters {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.field input,
+.field select,
+.field textarea {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.field input,
+.field select {
+  min-height: var(--tap);
+  padding: 0 12px;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field[aria-invalid] {
+  color: var(--text);
+}
+
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+.fieldError {
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.filterActions {
+  display: flex;
+  justify-content: flex-end;
+  grid-column: 1 / -1;
+}
+
+.filterActions .btn {
+  min-height: 40px;
+  padding: 0 18px;
+}
+
+/* ---------- Список ---------- */
+.list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+
+.itemMain {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.typeBadge {
+  justify-self: start;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.period {
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  color: var(--text-muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.itemActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.itemActions .btn {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+
+.dangerText {
+  color: var(--danger);
+}
+
+.dangerButton {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+/* ---------- Форма ---------- */
+.formPanel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.formActions .btn {
+  min-height: 40px;
+  padding: 0 18px;
+}
+
+/* ---------- Предупреждение о конфликтах ---------- */
+.conflicts {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  font-size: 14px;
+}
+
+.conflictsHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.conflictsHeader .btn {
+  min-height: 36px;
+  padding: 0 14px;
+}
+
+.conflictList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conflictLink {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.conflictLink:hover {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+@media (min-width: 768px) {
+  .item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .itemActions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 640px) {
+  .filters,
+  .form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

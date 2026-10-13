@@ -330,6 +330,7 @@ export function createAdminMemoryRepositories(state: AdminMemoryState): AdminRep
         state.settings = { ...state.settings, ...values }
       },
     },
+    analytics: analyticsRepo(state),
   }
 }
 
@@ -342,5 +343,34 @@ export function createCoreMemoryRepositories(state: AdminMemoryState): Repositor
         state.linkCodes = [...state.linkCodes, { code: input.code, barberId: input.barberId, expiresAt: input.expiresAt }]
       },
     },
+  }
+}
+
+/** Аналитика в памяти: те же правила, что у Prisma-репозитория ([from, to), completed до before). */
+function analyticsRepo(state: AdminMemoryState): AdminRepositories['analytics'] {
+  return {
+    listBookings: async (from, to) =>
+      state.bookings
+        .filter(booking => booking.startsAt >= from && booking.startsAt < to)
+        .map(booking => ({
+          id: booking.id,
+          barberId: booking.barberId,
+          barberName: booking.barberName,
+          clientId: booking.clientId,
+          status: booking.status,
+          startsAt: booking.startsAt,
+          endsAt: booking.endsAt,
+          totalPrice: booking.totalPrice,
+          services: booking.services.map(service => ({ serviceId: service.serviceId, name: service.name, price: service.price })),
+        })),
+    clientVisitStats: async (clientIds, before) =>
+      clientIds.flatMap(clientId => {
+        const visits = state.bookings.filter(
+          booking => booking.clientId === clientId && booking.status === 'completed' && booking.startsAt < before,
+        )
+        if (visits.length === 0) return []
+        const firstVisitAt = new Date(Math.min(...visits.map(booking => booking.startsAt.getTime())))
+        return [{ clientId, firstVisitAt, visits: visits.length }]
+      }),
   }
 }

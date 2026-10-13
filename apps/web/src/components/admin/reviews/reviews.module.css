@@ -1,0 +1,207 @@
+.page {
+  display: grid;
+  gap: 16px;
+}
+
+.title {
+  font-size: clamp(26px, 4vw, 34px);
+}
+
+.success,
+.error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.success {
+  border: 1px solid var(--success);
+  color: var(--success);
+}
+
+.error {
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
+.strong {
+  font-weight: 700;
+}
+
+/* ---------- Фильтры ---------- */
+.filters {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.field select {
+  min-height: var(--tap);
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.filterActions {
+  display: flex;
+  justify-content: flex-end;
+  grid-column: 1 / -1;
+}
+
+.filterActions .btn {
+  min-height: 40px;
+  padding: 0 18px;
+}
+
+/* ---------- Список ---------- */
+.list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  font-size: 14px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+.rating {
+  color: var(--accent);
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+
+.comment {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.toggleCell {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 12px 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.switch:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.switchOn {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.switchKnob {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  transition: background-color 0.15s ease;
+}
+
+.switchKnob::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.switchOn .switchKnob {
+  background: var(--accent);
+}
+
+.switchOn .switchKnob::after {
+  transform: translateX(14px);
+  background: var(--bg-elevated);
+}
+
+/* ---------- Пагинация ---------- */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.paginationControls .btn {
+  min-height: 36px;
+  padding: 0 16px;
+}
+
+@media (min-width: 768px) {
+  .item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .toggleCell {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

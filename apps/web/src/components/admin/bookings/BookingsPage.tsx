@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+import Link from 'next/link'
+
 import type { BookingTab } from '@/lib/admin/bookingsQuery'
 
 import { AllBookings } from './AllBookings'
@@ -18,9 +20,14 @@ export function BookingsPage() {
 
   return (
     <section className={styles.page} aria-labelledby="bookings-title">
-      <h1 id="bookings-title" className={styles.title}>
-        Записи
-      </h1>
+      <div className={styles.header}>
+        <h1 id="bookings-title" className={styles.title}>
+          Записи
+        </h1>
+        <Link href="/admin/bookings/new" className="btn btn-primary">
+          Новая запись
+        </Link>
+      </div>
       <div className={styles.tabs} role="tablist" aria-label="Период записей">
         {TABS.map(item => {
           const selected = item.value === tab

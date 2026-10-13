@@ -1,5 +1,6 @@
 import type { Db } from '../../../db/prisma'
 import type { AdminRepositories } from '../types'
+import { PrismaAnalyticsRepository } from './analytics'
 import { PrismaAdminAuthRepository } from './auth'
 import { PrismaAdminServiceRepository } from './catalog'
 import { PrismaAdminBarberRepository } from './barbers'
@@ -17,5 +18,6 @@ export function createPrismaAdminRepositories(db: Db): AdminRepositories {
     bookings: new PrismaAdminBookingRepository(db),
     reviews: new PrismaAdminReviewRepository(db),
     settings: new PrismaAdminSettingsRepository(db),
+    analytics: new PrismaAnalyticsRepository(db),
   }
 }

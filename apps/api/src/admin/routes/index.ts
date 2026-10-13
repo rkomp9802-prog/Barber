@@ -6,6 +6,7 @@ import { LoginThrottle } from '../auth/login-throttle'
 import type { AdminConfig } from '../config'
 import type { AdminRepositories } from '../repositories/types'
 import type { AdminContext } from '../services/context'
+import { adminAnalyticsRoutes } from './analytics'
 import { adminAuthRoutes, adminMeRoute } from './auth'
 import { adminBarberRoutes } from './barbers'
 import { adminBookingRoutes } from './bookings'
@@ -52,5 +53,6 @@ async function registerAdmin(admin: FastifyInstance, ctx: AdminContext): Promise
     await secured.register(async scope => adminBookingRoutes(scope, ctx))
     await secured.register(async scope => adminReviewRoutes(scope, ctx))
     await secured.register(async scope => adminSettingsRoutes(scope, ctx))
+    await secured.register(async scope => adminAnalyticsRoutes(scope, ctx))
   })
 }
