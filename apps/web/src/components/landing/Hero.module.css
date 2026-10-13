@@ -1,55 +1,172 @@
-/* Hero лендинга: заголовок, CTA, статистика и декоративный постер. */
+/* Hero лендинга: кирпичная стена, фигура мастера по центру (тонет в темноте снизу),
+   огромный заголовок КАПСОМ по бокам от головы, водяной знак-контур.
+   Цвета только через токены темы .landing (globals.css). */
 
-/* ---------- Hero ---------- */
+/* ---------- Фон ---------- */
 .hero {
   position: relative;
+  isolation: isolate;
   overflow: hidden;
-  padding: 40px 0 72px;
+  min-height: 100svh;
+  padding: 96px 0 56px;
+  background: var(--bg);
+}
+
+.bg {
+  z-index: -3;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Затемнение кирпича (≈75%): фигура по центру читается, низ уходит в фон секции. */
+.shade {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
   background:
-    radial-gradient(60% 50% at 85% 20%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
-    var(--bg);
+    radial-gradient(70% 60% at 50% 40%, rgb(14 11 9 / 45%), rgb(14 11 9 / 82%) 100%),
+    linear-gradient(180deg, rgb(14 11 9 / 60%) 0%, rgb(14 11 9 / 78%) 55%, var(--bg) 100%);
 }
 
-.heroGrid {
-  display: grid;
-  gap: 48px;
-  align-items: center;
+/* Водяной знак: название салона контуром за фигурой и заголовком. Декор, для читателей скрыт. */
+.watermark {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  z-index: -1;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: clamp(120px, 36vw, 560px);
+  font-weight: 700;
+  line-height: 0.8;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 2px rgb(242 140 26 / 35%);
+  pointer-events: none;
+  user-select: none;
 }
 
-.heroCopy {
+/* ---------- Композиция ---------- */
+.inner {
+  position: relative;
+  z-index: 1;
   display: grid;
-  gap: 22px;
+  grid-template-rows: auto 1fr;
+  min-height: calc(100svh - 152px);
+  gap: 32px;
+}
+
+/* ---------- Фигура мастера ----------
+   Фото 900x1350 с маской: по центру и вниз проявляется в прозрачность. */
+.figure {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 0;
+  height: 60svh;
+  aspect-ratio: 2 / 3;
+  transform: translateX(-50%);
+  /* У фото светлый фон: маска плотная по центру (голова и борода) и быстро уходит в прозрачность,
+     чтобы прямоугольник фото не читался на тёмном фоне. */
+  -webkit-mask-image:
+    radial-gradient(ellipse 46% 52% at 52% 38%, #000 42%, transparent 78%),
+    linear-gradient(180deg, #000 50%, transparent 92%);
+  mask-image:
+    radial-gradient(ellipse 46% 52% at 52% 38%, #000 42%, transparent 78%),
+    linear-gradient(180deg, #000 50%, transparent 92%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  pointer-events: none;
+}
+
+.portrait {
+  object-fit: cover;
+  object-position: center top;
+  filter: contrast(1.05) saturate(0.9) brightness(0.85);
+}
+
+/* ---------- Заголовок КАПСОМ ---------- */
+.heroTitle {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-self: start;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.9rem, 9vw, 3.6rem);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-shadow: 0 4px 24px rgb(0 0 0 / 60%);
+  text-align: center;
+}
+
+.colLeft,
+.colRight {
+  display: grid;
   min-width: 0;
 }
 
-.heroTitle {
-  font-size: clamp(40px, 10vw, 84px);
-  line-height: 1.02;
-  letter-spacing: -0.025em;
+/* Строка заголовка: маска. Внутренняя часть уезжает вниз на 100% и поднимается. */
+.heroLine {
+  display: block;
+  overflow: hidden;
+  overflow: clip;
+  padding-block: 0.08em;
+  margin-block: -0.08em;
+}
+
+.heroLineInner {
+  display: block;
 }
 
 .heroTitle em {
   font-style: normal;
   color: var(--accent);
-  background: linear-gradient(transparent 82%, color-mix(in srgb, var(--accent) 25%, transparent) 82%);
+}
+
+/* ---------- Подвал: eyebrow, lead, кнопки, статистика ---------- */
+.foot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  align-self: end;
+  gap: 18px;
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0;
 }
 
 .heroLead {
-  max-width: 460px;
-  color: var(--text-muted);
+  max-width: 520px;
+  margin: 0;
+  color: var(--text);
   font-size: 17px;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 70%);
 }
 
 .heroActions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
 }
 
+/* ---------- Статистика ---------- */
 .stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 12px 0 0;
+  width: 100%;
+  max-width: 600px;
+  margin: 8px 0 0;
   border-top: 1px solid var(--border);
 }
 
@@ -57,20 +174,20 @@
   display: flex;
   flex-direction: column-reverse;
   gap: 2px;
-  padding: 16px 12px 0 0;
+  padding: 14px 12px 0;
 }
 
 .stat + .stat {
-  padding-left: 14px;
   border-left: 1px solid var(--border);
 }
 
 .statValue {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(28px, 6vw, 40px);
+  font-size: clamp(32px, 6vw, 44px);
   font-weight: 700;
   line-height: 1;
+  color: var(--accent);
   font-variant-numeric: lining-nums;
 }
 
@@ -79,138 +196,120 @@
   font-size: 13px;
 }
 
-/* Декоративная композиция: постер с полосами барбер-полла. */
-.heroArt {
-  position: relative;
-  width: 100%;
-  max-width: 420px;
-  margin: 0 auto;
-  padding-bottom: 28px;
-}
-
-.poster {
-  position: relative;
-  aspect-ratio: 4 / 5;
-  padding: 14px;
-  border: 1px solid var(--accent);
-  border-radius: 200px 200px var(--radius) var(--radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow);
-  transform: rotate(-2deg);
-}
-
-.posterStripes {
-  position: absolute;
-  inset: 14px;
-  border-radius: 190px 190px var(--radius-sm) var(--radius-sm);
-  background:
-    repeating-linear-gradient(
-      -45deg,
-      var(--accent) 0 18px,
-      transparent 18px 30px,
-      color-mix(in srgb, var(--accent) 35%, transparent) 30px 36px,
-      transparent 36px 48px
-    ),
-    var(--bg-muted);
-}
-
-.posterMedallion {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 2px;
-  width: 58%;
-  aspect-ratio: 1;
-  border: 1px solid var(--accent);
-  border-radius: 50%;
-  outline: 6px solid var(--bg-elevated);
-  background: var(--bg-elevated);
-  text-align: center;
-  transform: translate(-50%, -50%) rotate(2deg);
-}
-
-.posterEst,
-.posterCity {
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-}
-
-.posterName {
-  font-family: var(--font-display);
-  font-size: clamp(36px, 9vw, 52px);
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.heroBadge {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  max-width: calc(100% - 16px);
-  padding: 14px 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow);
-  font-size: 15px;
-  animation: float 6s ease-in-out infinite;
-}
-
-.heroBadge strong {
-  display: block;
-}
-
-.heroBadgeLabel {
-  display: block;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.heroBadgeDot {
-  flex: none;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--success);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 22%, transparent);
-}
-
-@keyframes float {
-  50% {
-    transform: translateY(-6px);
+/* ---------- Вход героя при загрузке ----------
+   Без движения (reduced motion) всё сразу в конечном состоянии. */
+@keyframes hero-line-in {
+  from {
+    translate: 0 100%;
   }
 }
 
-@media (min-width: 640px) {
-  .heroBadge {
-    left: -24px;
+@keyframes hero-media-in {
+  from {
+    opacity: 0;
+    scale: 1.06;
   }
 }
 
+@keyframes hero-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Строки заголовка: стаггер по индексу (левая колонка, затем правая). */
+  .heroLineInner {
+    animation: hero-line-in var(--m-dur-reveal) var(--m-ease-enter) both;
+    animation-delay: calc(var(--line, 0) * var(--m-stagger));
+  }
+
+  /* Фон и фигура: кадр 1.06 → 1 и проявление. */
+  .bg,
+  .figure {
+    animation: hero-media-in var(--m-dur-media) var(--m-ease-enter) both;
+  }
+
+  /* Подвал: мягкий fade после заголовка. */
+  .foot {
+    animation: hero-fade-in var(--m-dur-fade) var(--m-ease-enter) var(--m-delay-copy) both;
+  }
+}
+
+/* ---------- Мобильный (до 900px) ----------
+   Фигура сверху по центру (~55vh), заголовок поверх её нижней части в 4 строки, затем подвал. */
+@media (max-width: 899px) {
+  .hero {
+    padding: 88px 0 48px;
+  }
+
+  .inner {
+    min-height: 0;
+    gap: 0;
+  }
+
+  .figure {
+    top: 0;
+    height: 55svh;
+  }
+
+  .heroTitle {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: calc(55svh - 150px);
+    font-size: clamp(2.9rem, 9vw, 3.6rem);
+  }
+
+  .foot {
+    margin-top: 28px;
+  }
+}
+
+/* ---------- Десктоп (от 900px) ----------
+   Заголовок в две колонки: левая выровнена вправо, правая — влево, между ними лицо (≈30%). */
 @media (min-width: 900px) {
   .hero {
-    padding: 72px 0 112px;
+    padding: 104px 0 72px;
   }
 
-  .heroGrid {
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-    gap: 64px;
+  .inner {
+    gap: 40px;
   }
 
-  .heroArt {
-    max-width: 440px;
-    margin-right: 0;
+  .figure {
+    top: 6svh;
+    height: 68svh;
+  }
+
+  .heroTitle {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 30%;
+    align-self: start;
+    margin-top: 6svh;
+    font-size: clamp(3rem, 1.6rem + 3.8vw, 6.75rem);
+    text-align: initial;
+  }
+
+  .colLeft {
+    justify-items: end;
+    text-align: right;
+  }
+
+  .colRight {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .heroLead {
+    font-size: 18px;
+  }
+}
+
+/* ---------- Reduced motion: без анимаций, всё видно сразу ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .heroLineInner,
+  .bg,
+  .figure,
+  .foot {
+    animation: none;
   }
 }

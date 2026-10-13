@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Manrope, Playfair_Display } from 'next/font/google'
+import { Manrope, Oswald, Playfair_Display } from 'next/font/google'
 import type { ReactNode } from 'react'
 
 import { shop } from '@/data/shop'
@@ -14,6 +14,9 @@ const playfair = Playfair_Display({
   weight: ['600', '700'],
   display: 'swap',
 })
+
+/** Сжатый гротеск для заголовков главной (тёмная тема .landing); с кириллицей. */
+const oswald = Oswald({ subsets: ['latin', 'cyrillic'], variable: '--font-oswald', weight: ['500', '700'], display: 'swap' })
 
 export const metadata: Metadata = {
   title: `${shop.fullName} — ${shop.tagline}`,
@@ -33,7 +36,7 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="ru" className={`${manrope.variable} ${playfair.variable}`} suppressHydrationWarning>
+    <html lang="ru" className={`${manrope.variable} ${playfair.variable} ${oswald.variable}`} suppressHydrationWarning>
       <head>
         {/* Ставит выбранную тему до первой отрисовки, чтобы страница не мигала. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

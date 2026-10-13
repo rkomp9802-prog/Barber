@@ -40,6 +40,7 @@ export function ThemeToggle() {
 
   return (
     <button
+      data-theme-toggle=""
       type="button"
       className={styles.toggle}
       onClick={() => applyTheme(nextTheme)}

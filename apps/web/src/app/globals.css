@@ -19,6 +19,18 @@
   --tap: 44px;
   --font-body: var(--font-manrope), system-ui, sans-serif;
   --font-display: var(--font-playfair), Georgia, serif;
+
+  /* Движение («editorial cinematic», спокойнее). Только transform/opacity. */
+  --m-dur-ui: 250ms;
+  --m-dur-reveal: 900ms;
+  --m-dur-media: 1200ms;
+  --m-dur-fade: 600ms;
+  --m-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --m-stagger: 90ms;
+  --m-distance: 24px;
+  --m-reveal-step: 6%;
+  --m-delay-copy: 400ms;
+  --m-press-scale: 0.97;
   color-scheme: light;
 }
 
@@ -175,13 +187,17 @@ textarea {
   text-decoration: none;
   cursor: pointer;
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.15s ease;
+    background-color var(--m-dur-ui) var(--m-ease-enter),
+    border-color var(--m-dur-ui) var(--m-ease-enter),
+    color var(--m-dur-ui) var(--m-ease-enter),
+    scale var(--m-dur-ui) var(--m-ease-enter);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.btn:active {
-  transform: translateY(1px);
+/* Единая отдача нажатия. Individual property scale не конфликтует с transform у карточек. */
+.btn:active:not(:disabled) {
+  scale: var(--m-press-scale);
 }
 
 .btn:disabled {
@@ -222,6 +238,46 @@ textarea {
   white-space: nowrap;
 }
 
+/* ---------- Появление при прокрутке (CSS scroll-driven) ----------
+   Без поддержки view() элемент просто видим: скрытого состояния по умолчанию нет.
+   Reduced motion: анимации не объявляются, элемент сразу в конечном состоянии. */
+@keyframes m-reveal-rise {
+  from {
+    opacity: 0;
+    translate: 0 var(--m-distance);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: m-reveal-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+
+    /* Стаггер внутри группы через диапазон, а не delay (delay на scroll-таймлайне не работает). */
+    .reveal-group > :nth-child(2) { --reveal-i: 1; }
+    .reveal-group > :nth-child(3) { --reveal-i: 2; }
+    .reveal-group > :nth-child(4) { --reveal-i: 3; }
+    .reveal-group > :nth-child(5) { --reveal-i: 4; }
+    .reveal-group > :nth-child(6) { --reveal-i: 5; }
+    .reveal-group > :nth-child(n + 7) { --reveal-i: 6; }
+
+    .reveal-group > .reveal {
+      animation-range:
+        entry calc(var(--reveal-i, 0) * var(--m-reveal-step))
+        cover calc(30% + var(--reveal-i, 0) * var(--m-reveal-step));
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    animation: none;
+  }
+}
+
 @media (min-width: 768px) {
   :root {
     --gutter: 24px;
@@ -229,5 +285,137 @@ textarea {
 
   .section {
     padding: 96px 0;
+  }
+}
+
+/* ======================================================================
+   Главная: тёмная «индустриальная» тема (кирпич, оранжевый, Oswald).
+   Включается обёрткой .landing только на главной; /book и /admin не трогает.
+   ====================================================================== */
+.landing {
+  --bg: #0e0b09;
+  --bg-elevated: #19130f;
+  --bg-muted: #241b15;
+  --text: #f4ede5;
+  --text-muted: #b5a798;
+  --border: rgb(242 140 26 / 28%);
+  --accent: #f28c1a;
+  --accent-strong: #ffa23a;
+  --accent-contrast: #140c05;
+  --shadow: 0 2px 4px rgb(0 0 0 / 40%), 0 18px 40px rgb(0 0 0 / 45%);
+  --radius: 6px;
+  --radius-sm: 4px;
+  --font-display: var(--font-oswald), 'Arial Narrow', sans-serif;
+  /* Срез угла у рамок и карточек. */
+  --l-cut: 18px;
+  /* Тёплое свечение и виньетка поверх кирпича. */
+  --l-glow: radial-gradient(70% 55% at 50% 0%, rgb(242 140 26 / 30%), transparent 75%);
+  --l-vignette: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgb(0 0 0 / 70%));
+  color-scheme: dark;
+  color: var(--text);
+  background-color: var(--bg);
+  /* Кирпичная кладка: красно-коричневые кирпичи (SVG-плитка 128x48, ряды со сдвигом),
+     сверху тёплая подсветка, к низу затемнение для читаемости текста. */
+  background-image:
+    var(--l-vignette),
+    var(--l-glow),
+    linear-gradient(180deg, rgb(12 7 4 / 35%), rgb(12 7 4 / 62%) 60%, rgb(12 7 4 / 72%)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='48'%3E%3Crect width='128' height='48' fill='%23180e09'/%3E%3Crect x='1.5' y='1.5' width='61' height='21' rx='1' fill='%235c2f1c'/%3E%3Crect x='65.5' y='1.5' width='61' height='21' rx='1' fill='%234e2716'/%3E%3Crect x='-30.5' y='25.5' width='61' height='21' rx='1' fill='%23552b19'/%3E%3Crect x='33.5' y='25.5' width='61' height='21' rx='1' fill='%23633421'/%3E%3Crect x='97.5' y='25.5' width='61' height='21' rx='1' fill='%23552b19'/%3E%3C/svg%3E");
+  background-size:
+    100% 100%,
+    100% 100vh,
+    100% 100%,
+    128px 48px;
+  background-attachment: fixed, scroll, scroll, scroll;
+  min-height: 100vh;
+}
+
+/* Тема на главной всегда тёмная: переключатель не нужен. */
+.landing [data-theme-toggle] {
+  display: none;
+}
+
+/* Якоря меню не прячутся под фиксированной шапкой (и для Lenis anchors). */
+.landing section[id] {
+  scroll-margin-top: 88px;
+}
+
+/* Подзаголовок над большим заголовком: «Мужской груминг». */
+.l-kicker {
+  margin: 0 0 6px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Большой оранжевый заголовок секции. */
+.l-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.4rem, 1.4rem + 4vw, 4.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-wrap: balance;
+}
+
+.l-head {
+  text-align: center;
+  margin-bottom: clamp(32px, 5vw, 56px);
+}
+
+/* Оранжевая лента-заголовок во всю ширину (как «Transformation gallery»). */
+.l-band {
+  position: relative;
+  padding: clamp(18px, 3vw, 28px) var(--gutter);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  text-align: center;
+}
+
+.l-band .l-title {
+  color: var(--accent-contrast);
+}
+
+.l-band .l-kicker {
+  color: rgb(20 12 5 / 75%);
+}
+
+/* Рамка со срезанными углами и оранжевым контуром. */
+.l-frame {
+  position: relative;
+  background: var(--bg-elevated);
+  clip-path: polygon(
+    var(--l-cut) 0,
+    100% 0,
+    100% calc(100% - var(--l-cut)),
+    calc(100% - var(--l-cut)) 100%,
+    0 100%,
+    0 var(--l-cut)
+  );
+  box-shadow: inset 0 0 0 2px var(--l-frame-line);
+  /* inset-обводку срезает clip-path, поэтому диагонали срезов дорисовываем градиентами. */
+  --l-frame-line: var(--border);
+  --l-cut-d: calc(var(--l-cut) * 0.7071);
+  background-image:
+    linear-gradient(135deg, transparent calc(var(--l-cut-d) - 1.5px), var(--l-frame-line) calc(var(--l-cut-d) - 1.5px) calc(var(--l-cut-d) + 0.5px), transparent calc(var(--l-cut-d) + 0.5px)),
+    linear-gradient(-45deg, transparent calc(var(--l-cut-d) - 1.5px), var(--l-frame-line) calc(var(--l-cut-d) - 1.5px) calc(var(--l-cut-d) + 0.5px), transparent calc(var(--l-cut-d) + 0.5px));
+}
+
+/* Выделенная (оранжевая) карточка, слегка наклонённая. */
+.l-frame-accent {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  --l-frame-line: var(--accent-strong);
+}
+
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+  .l-tilt {
+    rotate: -2deg;
   }
 }

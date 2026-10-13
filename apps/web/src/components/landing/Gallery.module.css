@@ -1,0 +1,180 @@
+/* Галерея-лента на главной. Токены — из обёртки .landing (globals.css). */
+
+.section {
+  --card: 60vw;
+  --card-gap: 16px;
+  position: relative;
+  overflow: hidden;
+  padding: 0 0 clamp(56px, 8vw, 96px);
+}
+
+.stage {
+  position: relative;
+  padding: clamp(32px, 5vw, 56px) 0 0;
+}
+
+/* Огромное контурное слово за лентой, как «TRANSFORMATION» на референсе. */
+.bgWord {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  pointer-events: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 24vw;
+  line-height: 0.85;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: transparent;
+  -webkit-text-stroke: 2px rgb(242 140 26 / 35%);
+}
+
+.row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+  padding-inline: var(--gutter);
+}
+
+/* Стрелка: кликабельная зона 44px, внутри оранжевый треугольник 28px. */
+.arrow {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.glyph {
+  display: block;
+  width: 28px;
+  height: 28px;
+  background: var(--accent);
+  transition: background-color 0.2s ease;
+}
+
+.arrowPrev .glyph {
+  clip-path: polygon(100% 0, 100% 100%, 0 50%);
+}
+
+.arrowNext .glyph {
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.arrow:hover .glyph {
+  background: var(--accent-strong);
+}
+
+.arrow:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+/* Лента: горизонтальный скролл только внутри, страница не скроллится вбок.
+   Боковые отступы ставят первую и последнюю карточку по центру ленты. */
+.track {
+  display: flex;
+  gap: var(--card-gap);
+  min-width: 0;
+  padding: 24px calc(50% - var(--card) / 2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.track:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.slide {
+  --s: 1;
+  --tilt: 0deg;
+  position: relative;
+  flex: 0 0 var(--card);
+  width: var(--card);
+  margin: 0;
+  min-width: 0;
+  scroll-snap-align: center;
+}
+
+/* Толстая оранжевая рамка, скруглённые углы, без срезов clip-path. */
+.frame {
+  box-sizing: border-box;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 6px solid var(--accent);
+  border-radius: 14px;
+  background: var(--bg-elevated);
+  transform: rotate(var(--tilt)) scale(var(--s));
+}
+
+/* Перекрываем срезы и диагональные градиенты из глобального .l-frame. */
+.slide > .frame {
+  clip-path: none;
+  background-image: none;
+  box-shadow: none;
+}
+
+.photo {
+  object-fit: cover;
+}
+
+@media (hover: hover) {
+  .slide:hover .frame {
+    border-color: var(--accent-strong);
+  }
+}
+
+/* Desktop: активная (центральная) карточка крупнее и ровная, соседние меньше и наклонены. */
+@media (min-width: 900px) {
+  .section {
+    --card: 300px;
+    --card-gap: 48px;
+  }
+
+  .track {
+    padding-block: 56px;
+  }
+
+  .slide {
+    --s: 0.92;
+  }
+
+  .slide[data-side='left'] {
+    --tilt: -4deg;
+  }
+
+  .slide[data-side='right'] {
+    --tilt: 4deg;
+  }
+
+  .slide[data-active] {
+    --s: 1.25;
+    --tilt: 0deg;
+    z-index: 1;
+  }
+}
+
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+  .frame {
+    transition:
+      transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
+      border-color 0.2s ease;
+  }
+}

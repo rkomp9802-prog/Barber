@@ -1,0 +1,15 @@
+Stock photos: Unsplash License (https://unsplash.com/license) — free to use, attribution not required.
+Replace with your own photos via the admin panel (barber photo, portfolio).
+
+hero-bg.webp       Nathon Oski        https://unsplash.com/photos/EW_rqoSdDes
+hero-portrait.webp Ahmad Ebadi        https://unsplash.com/photos/zAsMbiVW5-M
+barber-1.webp      Salah Regouane     https://unsplash.com/photos/8HkPnJhC5Ic
+barber-2.webp      Nate Johnston      https://unsplash.com/photos/tgPrIYnW3g4
+barber-3.webp      Gulom Nazarov      https://unsplash.com/photos/DrG4V5skbMY
+barber-4.webp      Reza Ghaemi        https://unsplash.com/photos/5P-eClxMg1s
+work-1.webp        Michael DeMoya     https://unsplash.com/photos/Q82AM6BWBPM
+work-2.webp        Hai Phung          https://unsplash.com/photos/m4Pd_e-4zKs
+work-3.webp        Allef Vinicius     https://unsplash.com/photos/IvQeAVeJULw
+work-4.webp        Ahmad Ebadi        https://unsplash.com/photos/S3GxGKyGPWM
+work-5.webp        César Badilla Miranda https://unsplash.com/photos/t34TLxxmwws
+contacts-bg.webp   Redd Francisco     https://unsplash.com/photos/BBGyxhtPpC0

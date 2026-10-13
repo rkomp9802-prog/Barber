@@ -1,0 +1,68 @@
+/* Футер: огромный вордмарк во всю ширину, ниже адрес, телефон и год.
+   Цвета через токены темы; без .landing выглядит так же прилично. */
+
+.footer {
+  position: relative;
+  overflow: hidden;
+  padding: 40px 0 28px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.inner {
+  display: grid;
+  gap: 24px;
+  /* Единица cqi — от ширины этого блока: вордмарк растягивается на всю ширину. */
+  container-type: inline-size;
+}
+
+/* Вордмарк. Ширина «SHARP» в Oswald Bold ≈ 2.7em капса, поэтому 36cqi ≈ вся ширина контента. */
+.brand {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 36cqi;
+  font-weight: 700;
+  line-height: 0.82;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--accent);
+  text-align: center;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin: 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.meta p {
+  margin: 0;
+}
+
+.phone {
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.phone:hover {
+  color: var(--accent);
+}
+
+@media (min-width: 900px) {
+  .footer {
+    padding: 64px 0 36px;
+  }
+
+  .inner {
+    gap: 32px;
+  }
+}

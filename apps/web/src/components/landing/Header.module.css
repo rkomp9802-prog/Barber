@@ -2,9 +2,21 @@
   position: sticky;
   top: 0;
   z-index: 20;
+  isolation: isolate;
+}
+
+/* Матовая плашка. По умолчанию видна всегда (это же и fallback без scroll-driven).
+   Над героем она прозрачна и проявляется при прокрутке — см. @supports ниже. */
+.header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
+  opacity: 1;
 }
 
 .inner {
@@ -94,4 +106,82 @@
     display: inline;
     margin-right: 6px;
   }
+}
+
+/* Компактный режим при прокрутке: плашка проявляется, логотип чуть уменьшается.
+   Только opacity и scale; без поддержки и при reduced motion шапка статична (плашка видна). */
+@keyframes header-plate-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes header-logo-shrink {
+  to {
+    scale: 0.88;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .header::before {
+        opacity: 0;
+        animation: header-plate-in linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0px 120px;
+      }
+
+      .logo {
+        transform-origin: 0 50%;
+        animation: header-logo-shrink linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0px 120px;
+      }
+    }
+  }
+}
+
+/* ---------- Главная (тёмная тема .landing) ----------
+   Логотип КАПСОМ оранжевым, меню строго по центру, CTA справа. На /book эти правила не действуют. */
+:global(.landing) .inner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+}
+
+:global(.landing) .logo {
+  grid-column: 1;
+  justify-self: start;
+  color: var(--accent);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+:global(.landing) .nav {
+  grid-column: 2;
+  justify-self: center;
+  margin: 0;
+  gap: 32px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+:global(.landing) .nav a {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+:global(.landing) .nav a:hover {
+  color: var(--accent);
+}
+
+:global(.landing) .actions {
+  grid-column: 3;
+  justify-self: end;
+  margin: 0;
 }

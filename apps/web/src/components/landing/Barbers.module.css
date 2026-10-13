@@ -1,0 +1,151 @@
+/* Секция «Команда» на главной. Токены — из обёртки .landing (globals.css). */
+
+.section {
+  padding: 0 0 clamp(56px, 8vw, 96px);
+}
+
+.grid {
+  display: grid;
+  gap: 24px;
+  margin: 0;
+  padding: clamp(32px, 5vw, 56px) 0 0;
+  list-style: none;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.grid > li {
+  min-width: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.photoFrame {
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+}
+
+.photo {
+  object-fit: cover;
+  transform-origin: 50% 40%;
+}
+
+/* Тёплый тон и затемнение снизу — поверх фото, без filter на всю карточку. */
+.shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgb(242 140 26 / 10%), rgb(242 140 26 / 10%)),
+    linear-gradient(0deg, rgb(14 11 9 / 80%), transparent 55%);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 2px 0;
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.role {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.meta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.rating strong {
+  color: var(--text);
+}
+
+.bio {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cta {
+  margin-top: auto;
+  align-self: flex-start;
+  padding: 10px 16px 9px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.cta:hover {
+  background: var(--accent-strong);
+}
+
+.cta:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+/* Hover только на устройствах с мышью. Рамка меняет цвет сразу, без анимации. */
+@media (hover: hover) {
+  .card:hover .photoFrame {
+    box-shadow: inset 0 0 0 2px var(--accent-strong);
+  }
+}
+
+/* Масштаб фото при наведении — только без запрета движения. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .photo {
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .card:hover .photo {
+    transform: scale(1.04);
+  }
+}
