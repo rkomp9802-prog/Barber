@@ -96,9 +96,9 @@ const reviews = [...]
 
 ## Задачи
 
-- [ ] Создать проект Supabase.
-- [ ] Получить `DATABASE_URL`.
-- [ ] Получить `DIRECT_URL`.
+- [x] Создать проект Supabase.
+- [x] Получить `DATABASE_URL`.
+- [x] Получить `DIRECT_URL`.
 - [ ] Получить server credentials для Storage.
 - [x] Добавить `.env.example`.
 - [x] Установить Prisma.
@@ -117,7 +117,7 @@ const reviews = [...]
 - [x] Создать `admin_users`.
 - [x] Создать первую миграцию.
 - [x] Добавить seed с тестовыми данными.
-- [ ] Проверить данные через Supabase dashboard / Prisma.
+- [x] Проверить данные через Supabase dashboard / Prisma.
 
 ## Готово, когда
 
@@ -265,7 +265,7 @@ Mini App ────┘
 
 ## Задачи
 
-- [ ] Создать бота через BotFather.
+- [x] Создать бота через BotFather.
 - [x] Подключить grammY.
 - [x] Сделать `/start`.
 - [x] Добавить `/telegram/webhook`.
@@ -307,7 +307,7 @@ Mini App ────┘
 - [x] Автоматически завершать прошедшие записи.
 - [x] Через заданную задержку просить отзыв.
 - [x] Записывать `review_requested_at`.
-- [ ] Настроить Supabase Cron. (в облаке Supabase)
+- [x] Настроить Supabase Cron. (pg_cron каждые 5 минут, секреты в Vault)
 - [x] Проверить идемпотентность.
 
 ## Готово, когда
@@ -329,7 +329,7 @@ Mini App ────┘
 ## Задачи
 
 - [x] Сделать страницу `/admin/login`.
-- [ ] Создать первого администратора. (нужна база: npm run db:seed)
+- [x] Создать первого администратора. (нужна база: npm run db:seed)
 - [x] Хешировать пароль Argon2.
 - [x] Сделать httpOnly session cookie.
 - [x] Добавить rate limit login.
@@ -390,19 +390,19 @@ Mini App ────┘
 
 ## Задачи
 
-- [ ] Загрузить репозиторий в GitHub.
-- [ ] Создать Vercel project для `apps/web`.
-- [ ] Создать Vercel project для `apps/miniapp`.
-- [ ] Создать Vercel project для `apps/api`.
-- [ ] Добавить environment variables.
-- [ ] Подключить production API URL к web.
-- [ ] Подключить production API URL к Mini App.
-- [ ] Настроить CORS production.
-- [ ] Настроить Telegram webhook.
-- [ ] Настроить production Mini App URL.
-- [ ] Проверить Supabase Cron.
-- [ ] Проверить Edge Function.
-- [ ] Провести E2E сценарий сайта.
+- [x] Загрузить репозиторий в GitHub.
+- [x] Создать Vercel project для `apps/web`.
+- [x] Создать Vercel project для `apps/miniapp`.
+- [x] Создать Vercel project для `apps/api`.
+- [x] Добавить environment variables.
+- [x] Подключить production API URL к web.
+- [x] Подключить production API URL к Mini App.
+- [x] Настроить CORS production.
+- [x] Настроить Telegram webhook.
+- [x] Настроить production Mini App URL.
+- [x] Проверить Supabase Cron.
+- [x] Проверить Edge Function.
+- [x] Провести E2E сценарий сайта. (Playwright на продакшене: запись, отмена, двойная запись, перенос)
 - [ ] Проверить Telegram Mini App.
 - [ ] Проверить Telegram Bot.
 - [ ] Проверить напоминания.
@@ -427,14 +427,14 @@ API
 
 # Финальная проверка MVP
 
-- [ ] Сайт работает.
-- [ ] Услуги приходят из БД.
-- [ ] Барберы приходят из БД.
-- [ ] Слоты рассчитывает backend.
-- [ ] Запись сохраняется.
-- [ ] Двойная запись невозможна.
-- [ ] Отмена работает.
-- [ ] Перенос работает.
+- [x] Сайт работает.
+- [x] Услуги приходят из БД.
+- [x] Барберы приходят из БД.
+- [x] Слоты рассчитывает backend.
+- [x] Запись сохраняется.
+- [x] Двойная запись невозможна.
+- [x] Отмена работает.
+- [x] Перенос работает.
 - [ ] Mini App работает.
 - [ ] Bot работает.
 - [ ] Напоминание за день работает.
@@ -442,7 +442,7 @@ API
 - [ ] Запрос отзыва работает.
 - [ ] Админка работает.
 - [ ] Аналитика работает.
-- [ ] Проект задеплоен.
+- [x] Проект задеплоен.
 
 ---
 
