@@ -47,6 +47,9 @@
 }
 
 .phone {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
   color: var(--text);
   font-weight: 700;
   text-decoration: none;
