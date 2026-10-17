@@ -42,8 +42,9 @@ export function telegramWebhookRoutes(options: WebhookOptions): FastifyPluginAsy
     app.post(TELEGRAM_WEBHOOK_PATH, { config: { rateLimit: false } }, async (request, reply) => {
       if (!isValidSecret(readSecret(request), options.secret)) throw new AppError('UNAUTHORIZED')
       if (!isUpdate(request.body)) throw new AppError('VALIDATION_ERROR', 'Ожидается Telegram Update')
-      // Сбой getMe (сеть) → 500: Telegram повторит доставку позже.
-      if (!options.bot.isInited()) await options.bot.init()
+      // Сбой getMe (сеть) → 500: Telegram повторит доставку позже. Не bot.init(): он молча повторяет getMe
+      // бесконечно, и запрос висит, пока Telegram не оборвёт его по таймауту.
+      if (!options.bot.isInited()) options.bot.botInfo = await options.bot.api.getMe()
       try {
         await options.bot.handleUpdate(request.body)
       } catch (error: unknown) {

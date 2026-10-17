@@ -17,6 +17,8 @@ import { telegramWebhookRoutes } from './webhook'
  * только если задан TELEGRAM_WEBHOOK_SECRET: без секрета эндпоинт был бы открыт для любых запросов.
  */
 
+const TELEGRAM_API_TIMEOUT_SEC = 10
+
 /** Части бота, которые нужны до создания приложения (уведомления передаются в buildApp). */
 export type TelegramParts = {
   readonly bot: Bot
@@ -32,7 +34,8 @@ export function createTelegramParts(
 ): TelegramParts | undefined {
   const token = config.telegram.botToken
   if (!token) return undefined
-  const bot = new Bot(token)
+  // Ответ Telegram ждём недолго: обработчик webhook не должен висеть (по умолчанию в grammY — 500 с).
+  const bot = new Bot(token, { client: { timeoutSeconds: TELEGRAM_API_TIMEOUT_SEC } })
   const notifier = createTelegramNotifier({
     api: bot.api,
     repo: new PrismaTelegramRepository(db),

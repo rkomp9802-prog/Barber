@@ -18,6 +18,9 @@ const common = {
   format: 'esm',
   sourcemap: true,
   logLevel: 'info',
+  // Без keepNames esbuild переименовывает классы (AbortSignal → AbortSignal2), и node-fetch внутри grammY
+  // отвергает сигнал («Expected signal to be an instanceof AbortSignal»): любой запрос к Telegram падает.
+  keepNames: true,
   // pg-native API не использует. @node-rs/argon2 — нативный модуль (вход в админку),
   // его не бандлим, а копируем в функцию: см. copyArgon2.
   external: ['pg-native', '@node-rs/argon2'],
