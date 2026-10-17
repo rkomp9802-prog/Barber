@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { BookingDto } from '@barber/shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Notifier } from '../../src/notifications/notifier'
@@ -64,6 +65,28 @@ describe('POST /bookings', () => {
     const res = await create(app, { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt: at('10:00'), client })
     expect(res.json<BookingDto>()).toMatchObject({ status: 'confirmed', holdExpiresAt: null, canChange: true })
     expect(notifier.bookingCreated).toHaveBeenCalledOnce()
+  })
+
+  it('на продакшене без бота запись гостя не принимается: проверка номера не выключается молча', async () => {
+    const notifier = mockNotifier()
+    const app = await setup({
+      now: NOW,
+      notifier,
+      config: { nodeEnv: 'production', telegram: { botToken: undefined, botUsername: undefined, initDataMaxAgeSec: 86_400 } },
+    })
+    const res = await create(app, { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt: at('10:00'), client })
+    expect(res.statusCode).toBe(503)
+    expect(res.json<{ code: string }>().code).toBe('NOT_CONFIGURED')
+    expect(app.state.bookings).toHaveLength(0)
+    expect(notifier.bookingCreated).not.toHaveBeenCalled()
+  })
+
+  it('IP неподтверждённой записи хранится как HMAC с серверным ключом, а не простым хешем', async () => {
+    const app = await setup()
+    await create(app, { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt: at('10:00'), client })
+    const stored = app.state.bookings[0]?.holdIpHash
+    expect(stored).toMatch(/^[0-9a-f]{64}$/)
+    expect(stored).not.toBe(createHash('sha256').update('barber-hold:127.0.0.1').digest('hex'))
   })
 
   it('неподтверждённая запись держит слот 10 минут, потом слот свободен', async () => {

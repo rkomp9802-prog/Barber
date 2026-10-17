@@ -9,10 +9,13 @@ import { maskTokenInUrl } from './lib/tokens'
 import { noopNotifier, type Notifier } from './notifications/notifier'
 import { registerRoutes, type RoutePlugin } from './routes'
 import type { Repositories } from './repositories/types'
-import type { ServiceContext } from './services/context'
+import { guestBookingGuards, type ServiceContext } from './services/context'
 
 /** Часть конфигурации, нужная HTTP-приложению (тесты собирают её вручную). */
-export type AppHttpConfig = Pick<AppConfig, 'corsOrigins' | 'telegram' | 'rateLimit' | 'trustProxy' | 'logLevel'>
+export type AppHttpConfig = Pick<
+  AppConfig,
+  'nodeEnv' | 'corsOrigins' | 'telegram' | 'rateLimit' | 'trustProxy' | 'logLevel'
+>
 
 /** Зависимости приложения. Всё внешнее передаётся снаружи — так тесты подставляют подделки. */
 export type AppDeps = {
@@ -84,6 +87,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     notifier: deps.notifier ?? noopNotifier,
     now: deps.now ?? Date.now,
     telegramBotUsername: config.telegram.botUsername,
+    ...guestBookingGuards(config),
+  }
+  if (!ctx.telegramBotUsername && !ctx.allowUnverifiedGuests) {
+    app.log.error('TELEGRAM_BOT_USERNAME не задан: онлайн-запись с сайта отключена (номер нечем подтвердить)')
   }
   await registerRoutes(
     app,

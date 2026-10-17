@@ -52,6 +52,7 @@ export function demoState(): MemoryState {
 }
 
 export const TEST_CONFIG: AppHttpConfig = {
+  nodeEnv: 'test',
   corsOrigins: ['http://localhost:3000'],
   telegram: { botToken: TEST_BOT_TOKEN, botUsername: 'sharp_test_bot', initDataMaxAgeSec: 86_400 },
   rateLimit: { globalMax: 1000, bookingMax: 1000 },

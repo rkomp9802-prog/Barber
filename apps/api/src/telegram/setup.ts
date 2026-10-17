@@ -4,7 +4,7 @@ import type { AppConfig } from '../config'
 import type { Db } from '../db/prisma'
 import type { Notifier } from '../notifications/notifier'
 import type { Repositories } from '../repositories/types'
-import type { ServiceContext } from '../services/context'
+import { guestBookingGuards, type ServiceContext } from '../services/context'
 import { installHandlers } from './bot'
 import type { BotDeps } from './deps'
 import { createTelegramNotifier, type NotifierLogger } from './notifier'
@@ -60,6 +60,7 @@ export async function attachTelegram(
     notifier: parts.notifier,
     now: Date.now,
     telegramBotUsername: config.telegram.botUsername,
+    ...guestBookingGuards(config),
   }
   const deps: BotDeps = {
     ctx,

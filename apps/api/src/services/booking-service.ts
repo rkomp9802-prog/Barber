@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto'
+import { createHmac } from 'node:crypto'
 import {
   BOOKING_HOLD_MIN,
   MAX_ACTIVE_BOOKINGS_PER_PHONE,
@@ -23,9 +23,9 @@ const MAX_PENDING_PER_IP = 3
 
 type Hold = NonNullable<NewBooking['hold']>
 
-/** IP храним только хешем: он нужен для лимита, а не для того, чтобы знать адрес клиента. */
-function hashIp(ip: string | undefined): string {
-  return createHash('sha256').update(`barber-hold:${ip ?? 'unknown'}`).digest('hex')
+/** IP храним только HMAC с серверным ключом: он нужен для лимита, а не для того, чтобы знать адрес клиента. */
+function hashIp(key: string, ip: string | undefined): string {
+  return createHmac('sha256', key).update(`barber-hold:${ip ?? 'unknown'}`).digest('hex')
 }
 
 function parseStart(iso: string): number {
@@ -108,15 +108,19 @@ function bookingClient(input: CreateBookingInput, telegramClient: ClientRecord |
   return { kind: 'existing', clientId: telegramClient.id, name: input.client.name, phone: telegramClient.phone }
 }
 
-/** Гость сайта при настроенном боте — pending на BOOKING_HOLD_MIN минут. Без бота подтвердить нечем (dev). */
+/** Гость сайта — pending на BOOKING_HOLD_MIN минут, пока не подтвердит номер в боте. */
 function guestHold(
   ctx: ServiceContext,
   scope: RequestScope,
   telegramClient: ClientRecord | null,
   now: number,
 ): Hold | null {
-  if (telegramClient || !ctx.telegramBotUsername) return null
-  return { expiresAt: new Date(now + BOOKING_HOLD_MIN * MINUTE_MS), ipHash: hashIp(scope.ip) }
+  if (telegramClient) return null
+  if (!ctx.telegramBotUsername) {
+    if (ctx.allowUnverifiedGuests) return null
+    throw new AppError('NOT_CONFIGURED', 'Онлайн-запись временно недоступна. Позвоните нам, и мы вас запишем')
+  }
+  return { expiresAt: new Date(now + BOOKING_HOLD_MIN * MINUTE_MS), ipHash: hashIp(ctx.ipHashKey, scope.ip) }
 }
 
 /** Лимиты — в базе, общие для всех инстансов API: предстоящие записи на номер и неподтверждённые с одного IP. */

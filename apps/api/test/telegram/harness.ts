@@ -96,7 +96,14 @@ export async function createBotHarness(options: { state?: MemoryState } = {}): P
     settings: repos.settings,
     log: () => notifierLog,
   })
-  const ctx: ServiceContext = { repos, notifier, now: () => NOW, telegramBotUsername: BOT_USERNAME }
+  const ctx: ServiceContext = {
+    repos,
+    notifier,
+    now: () => NOW,
+    telegramBotUsername: BOT_USERNAME,
+    allowUnverifiedGuests: true,
+    ipHashKey: 'test-hold-key',
+  }
   const deps: BotDeps = {
     ctx,
     repo: createFakeTelegramRepo(state, extras),

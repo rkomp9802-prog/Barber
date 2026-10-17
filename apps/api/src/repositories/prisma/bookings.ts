@@ -54,7 +54,7 @@ export function liveBookingWhere(now: Date): Prisma.BookingWhereInput {
  * exclusion constraint видит их как занятые, хотя слот уже свободен.
  */
 async function dropExpiredHolds(tx: Tx, input: NewBooking, now: Date): Promise<void> {
-  await tx.booking.deleteMany({
+  const expired = await tx.booking.findMany({
     where: {
       barberId: input.barberId,
       status: 'pending',
@@ -62,6 +62,21 @@ async function dropExpiredHolds(tx: Tx, input: NewBooking, now: Date): Promise<v
       startsAt: { lt: input.endsAt },
       endsAt: { gt: input.startsAt },
     },
+    select: { id: true, clientId: true },
+  })
+  if (expired.length === 0) return
+  await tx.booking.deleteMany({ where: { id: { in: expired.map(b => b.id) }, status: 'pending' } })
+  await dropOrphanGuests(tx, expired.map(b => b.clientId))
+}
+
+/**
+ * Гость с сайта — отдельный клиент на каждую запись. Когда его записи больше нет (не подтвердил, передумал,
+ * подтвердил другим Telegram-клиентом), удаляем и его: имя и неподтверждённый телефон хранить незачем.
+ */
+export async function dropOrphanGuests(tx: Tx, clientIds: readonly string[]): Promise<void> {
+  if (clientIds.length === 0) return
+  await tx.client.deleteMany({
+    where: { id: { in: [...new Set(clientIds)] }, telegramId: null, bookings: { none: {} }, reviews: { none: {} } },
   })
 }
 
@@ -121,8 +136,14 @@ export class PrismaBookingRepository implements BookingRepository {
   }
 
   async discardPending(id: string): Promise<boolean> {
-    const { count } = await this.db.booking.deleteMany({ where: { id, status: 'pending' } })
-    return count > 0
+    return this.db.$transaction(async tx => {
+      const booking = await tx.booking.findUnique({ where: { id }, select: { clientId: true } })
+      if (!booking) return false
+      const { count } = await tx.booking.deleteMany({ where: { id, status: 'pending' } })
+      if (count === 0) return false
+      await dropOrphanGuests(tx, [booking.clientId])
+      return true
+    })
   }
 
   async listByClient(clientId: string, limit: number): Promise<BookingRecord[]> {

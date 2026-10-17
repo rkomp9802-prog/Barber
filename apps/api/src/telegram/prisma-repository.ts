@@ -1,5 +1,5 @@
 import type { Db } from '../db/prisma'
-import { BOOKING_INCLUDE, toRecord } from '../repositories/prisma/bookings'
+import { BOOKING_INCLUDE, dropOrphanGuests, toRecord } from '../repositories/prisma/bookings'
 import type { BookingRecord } from '../repositories/types'
 import type { ClientTelegramInfo, ConsumedLinkCode, TelegramRepository, VerifiedPhoneInput } from './repository'
 
@@ -115,7 +115,10 @@ export class PrismaTelegramRepository implements TelegramRepository {
 
   async confirmPending(bookingId: string, clientId: string, now: Date): Promise<BookingRecord | null> {
     return this.db.$transaction(async tx => {
-      const current = await tx.booking.findUnique({ where: { id: bookingId }, select: { client: { select: { name: true } } } })
+      const current = await tx.booking.findUnique({
+        where: { id: bookingId },
+        select: { clientId: true, client: { select: { name: true } } },
+      })
       if (!current) return null
       const { count } = await tx.booking.updateMany({
         where: { id: bookingId, status: 'pending', holdExpiresAt: { gt: now } },
@@ -123,6 +126,8 @@ export class PrismaTelegramRepository implements TelegramRepository {
       })
       if (count === 0) return null
       await tx.client.update({ where: { id: clientId }, data: { name: current.client.name } })
+      // Запись перешла к Telegram-клиенту — гость с неподтверждённым номером больше не нужен.
+      if (current.clientId !== clientId) await dropOrphanGuests(tx, [current.clientId])
       return toRecord(await tx.booking.findUniqueOrThrow({ where: { id: bookingId }, include: BOOKING_INCLUDE }))
     })
   }
