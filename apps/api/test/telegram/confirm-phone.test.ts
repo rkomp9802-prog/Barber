@@ -93,7 +93,7 @@ describe('подтверждение записи с сайта через Teleg
     await send(contactUpdate('79161234567'))
     expect(booking()?.status).toBe('pending')
     expect(tgClient()).toBeUndefined()
-    expect(sentTexts(h.calls).at(-1)).toContain('только для номеров Узбекистана')
+    expect(sentTexts(h.calls).at(-2)).toContain('только для номеров Узбекистана')
   })
 
   it('срок истёк → «время истекло», запись не закрепляется', async () => {

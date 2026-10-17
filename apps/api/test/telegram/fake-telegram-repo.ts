@@ -11,10 +11,12 @@ export type TelegramExtras = {
   readonly barberChats: Map<string, bigint>
   /** Одноразовые коды барберов (barber_link_codes). */
   readonly linkCodes: Map<string, { barberId: string; expiresAt: Date; usedAt: Date | null }>
+  /** chat_id → id последнего сообщения-меню (telegram_screens). */
+  readonly menuMessages: Map<bigint, number>
 }
 
 export function createTelegramExtras(): TelegramExtras {
-  return { clientChats: new Map(), barberChats: new Map(), linkCodes: new Map() }
+  return { clientChats: new Map(), barberChats: new Map(), linkCodes: new Map(), menuMessages: new Map() }
 }
 
 type StoredBooking = MemoryState['bookings'][number]
@@ -121,6 +123,11 @@ export function createFakeTelegramRepo(state: MemoryState, extras: TelegramExtra
       }
       state.bookings = state.bookings.map(b => (b.id === bookingId ? next : b))
       return toPublicBooking(next)
+    },
+    swapMenuMessage: async (chatId, messageId) => {
+      const previous = extras.menuMessages.get(chatId)
+      extras.menuMessages.set(chatId, messageId)
+      return previous !== undefined && previous !== messageId ? previous : null
     },
   }
 }

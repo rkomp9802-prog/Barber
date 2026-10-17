@@ -113,6 +113,14 @@ export class PrismaTelegramRepository implements TelegramRepository {
     return rows.map(toRecord)
   }
 
+  async swapMenuMessage(chatId: bigint, messageId: number): Promise<number | null> {
+    return this.db.$transaction(async tx => {
+      const previous = await tx.telegramScreen.findUnique({ where: { chatId }, select: { messageId: true } })
+      await tx.telegramScreen.upsert({ where: { chatId }, create: { chatId, messageId }, update: { messageId } })
+      return previous && previous.messageId !== messageId ? previous.messageId : null
+    })
+  }
+
   async confirmPending(bookingId: string, clientId: string, now: Date): Promise<BookingRecord | null> {
     return this.db.$transaction(async tx => {
       const current = await tx.booking.findUnique({

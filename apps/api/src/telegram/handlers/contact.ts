@@ -2,7 +2,8 @@ import { Composer, type Context } from 'grammy'
 import { telegramDisplayName } from '../../auth/telegram'
 import type { BotDeps } from '../deps'
 import { acceptContact } from '../confirm-booking'
-import { contactRequestKeyboard, mainMenu } from '../keyboards'
+import { REMOVE_KEYBOARD, contactRequestKeyboard } from '../keyboards'
+import { homeScreen, sendScreen } from '../screens'
 import { texts } from '../texts'
 import { actorOf } from './start'
 
@@ -26,13 +27,13 @@ export function contactHandlers(deps: BotDeps): Composer<Context> {
       await ctx.reply(texts.contactForeign, { reply_markup: contactRequestKeyboard() })
       return
     }
-    if (result.kind === 'not_uz') {
-      await ctx.reply(texts.contactNotUz(deps.appUrl), { reply_markup: mainMenu(deps.miniAppUrl) })
-      return
-    }
-    await ctx.reply(texts.phoneVerified(result.confirmed.length, result.tooMany, result.expired), {
-      reply_markup: mainMenu(deps.miniAppUrl),
-    })
+    const text =
+      result.kind === 'not_uz'
+        ? texts.contactNotUz(deps.appUrl)
+        : texts.phoneVerified(result.confirmed.length, result.tooMany, result.expired)
+    // Ответ остаётся в чате и убирает кнопку «Поделиться номером»; сообщение с номером удаляется, ниже — меню.
+    await ctx.reply(text, { reply_markup: REMOVE_KEYBOARD })
+    await sendScreen(ctx, deps, homeScreen(deps, ctx.from.first_name))
   })
   return composer
 }

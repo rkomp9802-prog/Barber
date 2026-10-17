@@ -101,6 +101,6 @@ describe('комментарий: ответ на сообщение бота', 
     await send(callbackUpdate(RATE_DATA))
     await send(textUpdate('просто текст'))
     expect(h.state.reviews[0]?.comment).toBeNull()
-    expect(sentTexts(h.calls).at(-1)).toContain('Выберите действие в меню ниже.')
+    expect(sentTexts(h.calls).at(-1)).toContain('Выберите, что нужно:')
   })
 })

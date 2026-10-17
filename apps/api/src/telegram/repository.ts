@@ -62,4 +62,6 @@ export interface TelegramRepository {
    * его имя — то, что ввели при записи. null — подтвердить уже нельзя.
    */
   confirmPending(bookingId: string, clientId: string, now: Date): Promise<BookingRecord | null>
+  /** Запоминает сообщение-меню чата и возвращает прежнее (его можно удалить). null — прежнего нет или это оно же. */
+  swapMenuMessage(chatId: bigint, messageId: number): Promise<number | null>
 }

@@ -1,30 +1,12 @@
 import { Composer, type Context } from 'grammy'
 import { loadRules } from '../../services/context'
-import { cancelOwnBooking, findOwnBooking, listUpcoming } from '../client-actions'
+import { cancelOwnBooking, findOwnBooking } from '../client-actions'
 import type { BotDeps } from '../deps'
-import { CALLBACK_PATTERNS, MENU, bookingsKeyboard, confirmCancelKeyboard, mainMenu } from '../keyboards'
+import { CALLBACK, CALLBACK_PATTERNS, MENU, afterCancelKeyboard, confirmCancelKeyboard } from '../keyboards'
+import { bookingsScreen, contactsScreen, editScreen, homeScreen, sendScreen } from '../screens'
 import { texts } from '../texts'
 
-const HTML = { parse_mode: 'HTML' } as const
-
-async function showBookings(ctx: Context, deps: BotDeps): Promise<void> {
-  if (!ctx.from) return
-  const { items, rules } = await listUpcoming(deps, BigInt(ctx.from.id))
-  if (items.length === 0) {
-    await ctx.reply(texts.noUpcoming, { reply_markup: mainMenu(deps.miniAppUrl) })
-    return
-  }
-  const body = items.map((item, index) => texts.bookingItem(index + 1, item.booking, rules.timezone)).join('\n\n')
-  const text = [texts.upcomingHeader(items.length), '', body, '', texts.cutoffHint(rules.cancelCutoffMin)].join('\n')
-  const keyboard = bookingsKeyboard(
-    items.map(item => ({ ...item, timeZone: rules.timezone, appUrl: deps.appUrl })),
-  )
-  await ctx.reply(text, { ...HTML, reply_markup: keyboard })
-}
-
-async function showContacts(ctx: Context, deps: BotDeps): Promise<void> {
-  await ctx.reply(texts.contacts(deps.appUrl), { ...HTML, link_preview_options: { is_disabled: true } })
-}
+const firstName = (ctx: Context): string => ctx.from?.first_name ?? ''
 
 async function askCancel(ctx: Context, deps: BotDeps, bookingId: string): Promise<void> {
   if (!ctx.from) return
@@ -34,11 +16,7 @@ async function askCancel(ctx: Context, deps: BotDeps, bookingId: string): Promis
     return
   }
   const rules = await loadRules(deps.ctx)
-  await ctx.answerCallbackQuery()
-  await ctx.reply(texts.confirmCancel(own.booking, rules.timezone), {
-    ...HTML,
-    reply_markup: confirmCancelKeyboard(bookingId),
-  })
+  await editScreen(ctx, deps, { text: texts.confirmCancel(own.booking, rules.timezone), keyboard: confirmCancelKeyboard(bookingId) })
 }
 
 async function confirmCancel(ctx: Context, deps: BotDeps, bookingId: string): Promise<void> {
@@ -49,22 +27,37 @@ async function confirmCancel(ctx: Context, deps: BotDeps, bookingId: string): Pr
     return
   }
   const rules = await loadRules(deps.ctx)
-  await ctx.answerCallbackQuery({ text: 'Запись отменена' })
-  await ctx.editMessageText(texts.cancelledByUser(result.booking, rules.timezone), HTML)
+  await editScreen(ctx, deps, { text: texts.cancelledByUser(result.booking, rules.timezone), keyboard: afterCancelKeyboard() })
 }
 
-/** Кнопки меню, команды /bookings и /contacts, отмена записи из списка. */
+/**
+ * Меню бота: экраны «Главное», «Мои записи», «Контакты» и отмена записи — в одном сообщении.
+ * Команды /bookings и /contacts и тексты старой reply-клавиатуры открывают экран новым сообщением.
+ */
 export function menuHandlers(deps: BotDeps): Composer<Context> {
   const composer = new Composer<Context>()
-  composer.command('bookings', ctx => showBookings(ctx, deps))
-  composer.hears(MENU.bookings, ctx => showBookings(ctx, deps))
-  composer.command('contacts', ctx => showContacts(ctx, deps))
-  composer.hears(MENU.contacts, ctx => showContacts(ctx, deps))
+  const bookings = async (ctx: Context) => (ctx.from ? bookingsScreen(deps, BigInt(ctx.from.id)) : null)
+
+  composer.command('bookings', async ctx => {
+    const screen = await bookings(ctx)
+    if (screen) await sendScreen(ctx, deps, screen)
+  })
+  composer.command('contacts', ctx => sendScreen(ctx, deps, contactsScreen(deps)))
+  // Кнопки старой reply-клавиатуры: показываем экран и убираем саму клавиатуру.
+  composer.hears(MENU.bookings, async ctx => {
+    const screen = await bookings(ctx)
+    if (screen) await sendScreen(ctx, deps, screen, { removeKeyboard: true })
+  })
+  composer.hears(MENU.contacts, ctx => sendScreen(ctx, deps, contactsScreen(deps), { removeKeyboard: true }))
+  composer.hears(MENU.book, ctx => sendScreen(ctx, deps, homeScreen(deps, firstName(ctx)), { removeKeyboard: true }))
+
+  composer.callbackQuery(CALLBACK.home, ctx => editScreen(ctx, deps, homeScreen(deps, firstName(ctx))))
+  composer.callbackQuery(CALLBACK.contacts, ctx => editScreen(ctx, deps, contactsScreen(deps)))
+  composer.callbackQuery([CALLBACK.bookings, CALLBACK.cancelNo], async ctx => {
+    const screen = await bookings(ctx)
+    if (screen) await editScreen(ctx, deps, screen)
+  })
   composer.callbackQuery(CALLBACK_PATTERNS.cancelAsk, ctx => askCancel(ctx, deps, ctx.match[1] ?? ''))
   composer.callbackQuery(CALLBACK_PATTERNS.cancelYes, ctx => confirmCancel(ctx, deps, ctx.match[1] ?? ''))
-  composer.callbackQuery(CALLBACK_PATTERNS.cancelNo, async ctx => {
-    await ctx.answerCallbackQuery()
-    await ctx.editMessageText(texts.cancelKept)
-  })
   return composer
 }

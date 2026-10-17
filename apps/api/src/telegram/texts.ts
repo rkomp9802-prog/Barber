@@ -46,7 +46,7 @@ export const texts = {
       `Здравствуйте, ${escapeHtml(firstName)}!`,
       '',
       'Я бот барбершопа: помогу записаться на стрижку, напомню о визите и покажу ваши записи.',
-      'Выберите действие в меню ниже.',
+      'Выберите, что нужно:',
     ),
   contacts: (siteUrl: string | undefined): string =>
     lines(
@@ -55,7 +55,7 @@ export const texts = {
       'Работаем каждый день, время — по Ташкенту.',
       siteUrl ? `Адрес, телефон и карта — на сайте: ${escapeHtml(siteUrl)}` : 'Адрес и телефон уточняйте у администратора.',
     ),
-  noUpcoming: 'У вас нет предстоящих записей. Нажмите «Записаться», чтобы выбрать время.',
+  noUpcoming: 'Предстоящих записей нет. Нажмите «Записаться», чтобы выбрать время.',
   upcomingHeader: (count: number): string => bold(`Ваши предстоящие записи (${count}):`),
   bookingItem: (index: number, booking: BookingRecord, timeZone: string): string =>
     lines(`${index}. ${bookingDetails(booking, timeZone)}`),
@@ -65,7 +65,6 @@ export const texts = {
     lines(bold('Отменить эту запись?'), '', bookingDetails(booking, timeZone)),
   cancelledByUser: (booking: BookingRecord, timeZone: string): string =>
     lines(bold('Запись отменена.'), '', bookingDetails(booking, timeZone)),
-  cancelKept: 'Хорошо, запись остаётся в силе.',
   bookingLinked: (booking: BookingRecord, timeZone: string): string =>
     lines(
       bold('Запись привязана к Telegram.'),

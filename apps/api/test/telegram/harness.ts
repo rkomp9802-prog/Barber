@@ -45,9 +45,12 @@ export type ApiCall = { readonly method: string; readonly payload: unknown }
 
 /** Перехватывает все вызовы Bot API и отвечает успехом (сеть не используется). */
 export function captureApi(api: Api, calls: ApiCall[]): void {
+  let nextMessageId = 1000
   api.config.use(async (_prev, method, payload) => {
     calls.push({ method, payload })
-    return { ok: true, result: undefined as never }
+    // sendMessage возвращает сообщение: боту нужен его message_id (меню запоминается, чтобы потом удалить).
+    const result = method === 'sendMessage' ? { message_id: (nextMessageId += 1) } : undefined
+    return { ok: true, result: result as never }
   })
 }
 

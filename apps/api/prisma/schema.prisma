@@ -256,6 +256,15 @@ model AdminLoginAttempt {
   @@map("admin_login_attempts")
 }
 
+/// Последнее сообщение-меню бота в чате: новое меню заменяет его, чтобы чат не засорялся.
+model TelegramScreen {
+  chatId    BigInt   @id @map("chat_id")
+  messageId Int      @map("message_id")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("telegram_screens")
+}
+
 /// Одноразовые коды привязки барбера к Telegram (t.me/<bot>?start=barber_<code>).
 model BarberLinkCode {
   code      String    @id

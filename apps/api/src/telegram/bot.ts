@@ -4,7 +4,7 @@ import { contactHandlers } from './handlers/contact'
 import { menuHandlers } from './handlers/menu'
 import { reviewHandlers } from './handlers/reviews'
 import { startHandlers } from './handlers/start'
-import { mainMenu } from './keyboards'
+import { homeScreen, sendScreen } from './screens'
 import { texts } from './texts'
 
 /** Команды бота (setMyCommands в scripts/set-webhook.ts). */
@@ -44,7 +44,8 @@ export function installHandlers(bot: Bot, deps: BotDeps): Bot {
   privateChats.use(reviewHandlers(deps))
   privateChats.use(menuHandlers(deps))
   privateChats.on('callback_query:data', ctx => ctx.answerCallbackQuery({ text: 'Кнопка устарела' }))
-  privateChats.on('message', ctx => ctx.reply('Выберите действие в меню ниже.', { reply_markup: mainMenu(deps.miniAppUrl) }))
+  // Любое другое сообщение — не мусор в чате: оно удаляется, внизу появляется меню.
+  privateChats.on('message', ctx => sendScreen(ctx, deps, homeScreen(deps, ctx.from.first_name)))
   return bot
 }
 
