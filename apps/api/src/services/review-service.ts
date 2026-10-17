@@ -24,14 +24,18 @@ export async function createReview(ctx: ServiceContext, input: CreateReviewInput
   if (await ctx.repos.reviews.existsForBooking(booking.id)) {
     throw new AppError('VALIDATION_ERROR', ALREADY_REVIEWED)
   }
+  const comment = input.comment ? input.comment : null
+  const rules = await loadRules(ctx)
   try {
     return await ctx.repos.reviews.create({
       bookingId: booking.id,
       barberId: booking.barberId,
       clientId: booking.clientId,
       rating: input.rating,
-      comment: input.comment ? input.comment : null,
-      isPublic: true,
+      comment,
+      // Текст — только после модерации в админке: визит не подтверждён (запись завершается
+      // автоматически по времени), и иначе на сайт сразу попали бы ссылки, реклама или чужие телефоны.
+      isPublic: comment === null && input.rating >= rules.reviewPublicMinRating,
     })
   } catch (error: unknown) {
     if (isUniqueViolation(error)) throw new AppError('VALIDATION_ERROR', ALREADY_REVIEWED)

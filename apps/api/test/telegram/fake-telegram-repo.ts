@@ -78,7 +78,7 @@ export function createFakeTelegramRepo(state: MemoryState, extras: TelegramExtra
     setReviewComment: async (bookingId, comment) => {
       const target = state.reviews.find(r => r.bookingId === bookingId && r.comment === null)
       if (!target) return false
-      state.reviews = state.reviews.map(r => (r === target ? { ...r, comment } : r))
+      state.reviews = state.reviews.map(r => (r === target ? { ...r, comment, isPublic: false } : r))
       return true
     },
   }

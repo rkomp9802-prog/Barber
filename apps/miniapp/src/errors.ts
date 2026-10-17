@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, plural } from '@barber/shared'
+import { DEFAULT_SETTINGS, MAX_ACTIVE_BOOKINGS_PER_PHONE, plural } from '@barber/shared'
 
 import { ApiRequestError, type RequestErrorCode } from './api'
 
@@ -17,6 +17,7 @@ const MESSAGES: Readonly<Record<RequestErrorCode, string>> = {
   OUTSIDE_WORKING_HOURS: 'В это время барбершоп не работает. Выберите другое время.',
   SERVICE_UNAVAILABLE: 'Этот барбер не оказывает одну из выбранных услуг.',
   BOOKING_NOT_ACTIVE: 'Запись уже отменена или завершена.',
+  TOO_MANY_BOOKINGS: `У вас уже ${MAX_ACTIVE_BOOKINGS_PER_PHONE} предстоящие записи. Отмените одну из них в «Мои записи».`,
   NOT_FOUND: 'Не удалось найти запись или услугу. Обновите список.',
   VALIDATION_ERROR: 'Проверьте введённые данные и попробуйте ещё раз.',
   UNAUTHORIZED: 'Не удалось подтвердить вход через Telegram. Закройте и снова откройте приложение из бота.',

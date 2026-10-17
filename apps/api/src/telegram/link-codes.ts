@@ -13,7 +13,7 @@ import type { BarberLinkCodeRepository, NewBarberLinkCode, Repositories } from '
  *
  * Барбер открывает ссылку → бот проверяет код (не истёк, не использован), записывает
  * barbers.telegram_chat_id и помечает код использованным (handlers/start.ts).
- * Повторно сгенерированный код не отменяет старые: каждый живёт до expiresAt или первого использования.
+ * Новый код отменяет неиспользованные старые: если ссылка ушла не тому, достаточно выдать новую.
  */
 
 /** Срок жизни кода. */
@@ -67,6 +67,9 @@ export class PrismaBarberLinkCodeRepository implements BarberLinkCodeRepository 
   constructor(private readonly db: Db) {}
 
   async create(input: NewBarberLinkCode): Promise<void> {
-    await this.db.barberLinkCode.create({ data: { ...input } })
+    await this.db.$transaction([
+      this.db.barberLinkCode.deleteMany({ where: { barberId: input.barberId, usedAt: null } }),
+      this.db.barberLinkCode.create({ data: { ...input } }),
+    ])
   }
 }

@@ -66,7 +66,11 @@ export class PrismaTelegramRepository implements TelegramRepository {
   }
 
   async setReviewComment(bookingId: string, comment: string): Promise<boolean> {
-    const { count } = await this.db.review.updateMany({ where: { bookingId, comment: null }, data: { comment } })
+    // Отзыв с текстом скрываем до модерации в админке (как и отзывы с сайта).
+    const { count } = await this.db.review.updateMany({
+      where: { bookingId, comment: null },
+      data: { comment, isPublic: false },
+    })
     return count > 0
   }
 }

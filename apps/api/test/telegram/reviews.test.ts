@@ -74,6 +74,8 @@ describe('комментарий: ответ на сообщение бота', 
     await send(callbackUpdate(RATE_DATA))
     await send(textUpdate('Отличная стрижка', { replyTo: botPromptWithMarker(BOOKING_ID) }))
     expect(h.state.reviews[0]?.comment).toBe('Отличная стрижка')
+    // Оценка 5 была публичной; с текстом отзыв ждёт модерации.
+    expect(h.state.reviews[0]?.isPublic).toBe(false)
     expect(sentTexts(h.calls).at(-1)).toContain('Комментарий сохранён')
 
     await send(textUpdate('Ещё раз', { replyTo: botPromptWithMarker(BOOKING_ID) }))

@@ -118,6 +118,16 @@ describe('отзывы', () => {
     const barber = await app.app.inject({ method: 'GET', url: `/api/v1/barbers/${IDS.timur}` })
     expect(barber.json()).toMatchObject({ rating: 3.5, reviewsCount: 2 })
   })
+
+  it('отзыв с текстом не публикуется до модерации', async () => {
+    const app = await setup()
+    const booking = await completedBooking(app)
+    const payload = { manageToken: booking.manageToken, rating: 5, comment: 'Звоните +998901112233, скидки!' }
+    expect((await app.app.inject({ method: 'POST', url: '/api/v1/reviews', payload })).statusCode).toBe(201)
+    expect(app.state.reviews[0]).toMatchObject({ rating: 5, isPublic: false })
+    const res = await app.app.inject({ method: 'GET', url: '/api/v1/reviews/public' })
+    expect(res.json<PublicReviewDto[]>()).toEqual([])
+  })
 })
 
 describe('rate limit', () => {

@@ -43,18 +43,16 @@ export function toRecord(row: BookingRow): BookingRecord {
   }
 }
 
-/** Гость с сайта: переиспользуем клиента с тем же телефоном (без Telegram), иначе создаём. */
+/**
+ * Гость с сайта — всегда новый клиент. Переиспользовать клиента по телефону нельзя: телефон не
+ * подтверждён, и посторонний, записавшись с чужим номером и привязав запись к своему Telegram,
+ * получил бы все записи владельца номера. Одного человека по телефону объединяет аналитика.
+ */
 async function resolveClientId(tx: Tx, ref: BookingClientRef): Promise<string> {
   if (ref.kind === 'existing') {
     await tx.client.update({ where: { id: ref.clientId }, data: { name: ref.name, phone: ref.phone } })
     return ref.clientId
   }
-  const existing = await tx.client.findFirst({
-    where: { phone: ref.phone, telegramId: null },
-    orderBy: { createdAt: 'asc' },
-    select: { id: true },
-  })
-  if (existing) return existing.id
   const created = await tx.client.create({ data: { name: ref.name, phone: ref.phone }, select: { id: true } })
   return created.id
 }
@@ -87,6 +85,10 @@ export class PrismaBookingRepository implements BookingRepository {
   async findByToken(token: string): Promise<BookingRecord | null> {
     const row = await this.db.booking.findUnique({ where: { manageToken: token }, include: BOOKING_INCLUDE })
     return row ? toRecord(row) : null
+  }
+
+  async countUpcomingByPhone(phone: string, now: Date): Promise<number> {
+    return this.db.booking.count({ where: { status: 'confirmed', startsAt: { gt: now }, client: { phone } } })
   }
 
   async listByClient(clientId: string, limit: number): Promise<BookingRecord[]> {

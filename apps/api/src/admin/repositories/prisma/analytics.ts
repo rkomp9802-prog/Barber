@@ -34,15 +34,18 @@ export class PrismaAnalyticsRepository implements AnalyticsRepository {
     }))
   }
 
+  /** Визиты считаем по человеку (телефону): гость с сайта каждый раз — новая строка clients. */
   async clientVisitStats(clientIds: readonly string[], before: Date): Promise<ClientVisitStat[]> {
-    const rows = await this.db.booking.groupBy({
-      by: ['clientId'],
-      where: { clientId: { in: [...clientIds] }, status: 'completed', startsAt: { lt: before } },
-      _count: { _all: true },
-      _min: { startsAt: true },
-    })
-    return rows.flatMap(row =>
-      row._min.startsAt ? [{ clientId: row.clientId, firstVisitAt: row._min.startsAt, visits: row._count._all }] : [],
-    )
+    const rows = await this.db.$queryRaw<{ client_key: string; visits: number; first_visit_at: Date }[]>`
+      WITH targets AS (
+        SELECT DISTINCT COALESCE(phone, id::text) AS client_key FROM clients WHERE id = ANY(${[...clientIds]}::uuid[])
+      )
+      SELECT COALESCE(c.phone, c.id::text) AS client_key, count(*)::int AS visits, min(b.starts_at) AS first_visit_at
+      FROM bookings b
+      JOIN clients c ON c.id = b.client_id
+      WHERE b.status = 'completed' AND b.starts_at < ${before}
+        AND COALESCE(c.phone, c.id::text) IN (SELECT client_key FROM targets)
+      GROUP BY 1`
+    return rows.map(row => ({ clientKey: row.client_key, firstVisitAt: row.first_visit_at, visits: row.visits }))
   }
 }

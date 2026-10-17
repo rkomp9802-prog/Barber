@@ -1,3 +1,5 @@
+import { MAX_ACTIVE_BOOKINGS_PER_PHONE } from '@barber/shared'
+
 import { isApiRequestError, type ApiRequestErrorCode } from './api'
 
 /** Понятные клиенту тексты ошибок. Сообщение сервера — запасной вариант. */
@@ -11,6 +13,7 @@ export const ERROR_MESSAGES: Readonly<Partial<Record<ApiRequestErrorCode, string
   VALIDATION_ERROR: 'Проверьте имя и номер телефона.',
   CUTOFF_PASSED: 'Изменить запись уже нельзя: до визита осталось слишком мало времени.',
   BOOKING_NOT_ACTIVE: 'Запись уже отменена или завершена.',
+  TOO_MANY_BOOKINGS: `На этот номер уже есть ${MAX_ACTIVE_BOOKINGS_PER_PHONE} предстоящие записи. Отмените одну из них или позвоните нам.`,
   NOT_FOUND: 'Запись не найдена. Проверьте ссылку.',
   RATE_LIMITED: 'Слишком много попыток. Подождите минуту и попробуйте снова.',
   UNAUTHORIZED: 'Сессия истекла. Войдите снова.',

@@ -123,6 +123,8 @@ export interface BookingRepository {
   /** Создаёт клиента (если нужно), запись и снимок услуг в одной транзакции. */
   create(input: NewBooking): Promise<BookingRecord>
   findByToken(token: string): Promise<BookingRecord | null>
+  /** Сколько confirmed-записей с началом после now у клиентов с этим телефоном. */
+  countUpcomingByPhone(phone: string, now: Date): Promise<number>
   listByClient(clientId: string, limit: number): Promise<BookingRecord[]>
   /** Отменяет, только если запись ещё confirmed. null — статус уже изменился. */
   cancel(id: string): Promise<BookingRecord | null>

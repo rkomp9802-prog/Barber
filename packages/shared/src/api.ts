@@ -30,6 +30,7 @@ export const API_ERROR_CODES = [
   'SERVICE_UNAVAILABLE', // 422 — барбер не оказывает услугу
   'CUTOFF_PASSED', // 422 — отмена/перенос позже cancel_cutoff_min
   'BOOKING_NOT_ACTIVE', // 409 — запись уже отменена/завершена
+  'TOO_MANY_BOOKINGS', // 409 — у номера уже MAX_ACTIVE_BOOKINGS_PER_PHONE предстоящих записей
   'UNAUTHORIZED', // 401
   'RATE_LIMITED', // 429
   'FORBIDDEN', // 403 — админка: нет CSRF-заголовка или чужой Origin
@@ -37,6 +38,9 @@ export const API_ERROR_CODES = [
   'INTERNAL', // 500
 ] as const
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number]
+
+/** Сколько предстоящих записей может быть на один номер: защита от скриптов, занимающих все слоты. */
+export const MAX_ACTIVE_BOOKINGS_PER_PHONE = 3
 
 /** Тело любого ответа с ошибкой. */
 export type ApiError = {
@@ -122,7 +126,8 @@ export type AvailabilityDaysResponse = {
 /* ---------- Записи ---------- */
 
 export const clientInputSchema = z.object({
-  name: z.string().trim().min(2).max(60),
+  // Без переносов строк и служебных символов: имя попадает в уведомление барберу, и перенос позволил бы подделать его вид.
+  name: z.string().trim().min(2).max(60).regex(/^[^\p{Cc}\p{Cf}]+$/u,'Имя без переносов строк и служебных символов'),
   phone: uzPhone,
 })
 

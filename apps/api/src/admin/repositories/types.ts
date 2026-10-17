@@ -216,7 +216,8 @@ export type AnalyticsBooking = {
 }
 
 export type ClientVisitStat = {
-  readonly clientId: string
+  /** Один человек: телефон (гость с сайта и Telegram-клиент с тем же номером — это он же), иначе id клиента. */
+  readonly clientKey: string
   /** Первый completed-визит за всё время (до before). */
   readonly firstVisitAt: Date
   /** Число completed-визитов до before. */

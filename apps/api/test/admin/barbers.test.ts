@@ -205,6 +205,13 @@ describe('барберы: ссылка привязки Telegram', () => {
     expect(app.state.linkCodes).toEqual([expect.objectContaining({ code: body.code, barberId: IDS.timur })])
   })
 
+  it('новый код отменяет старый неиспользованный', async () => {
+    const { app, cookie } = await start()
+    await adminInject(app.app, 'POST', `/barbers/${IDS.timur}/link-code`, { cookie })
+    const second = await adminInject(app.app, 'POST', `/barbers/${IDS.timur}/link-code`, { cookie })
+    expect(app.state.linkCodes.map(item => item.code)).toEqual([second.json<AdminBarberLinkCodeDto>().code])
+  })
+
   it('неизвестный барбер → 404 и код не создаётся', async () => {
     const { app, cookie } = await start()
     const res = await adminInject(app.app, 'POST', '/barbers/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee/link-code', { cookie })

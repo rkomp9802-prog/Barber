@@ -61,8 +61,7 @@ function resolveClient(state: MemoryState, input: NewBooking): MemoryState['clie
     state.clients = state.clients.map(c => (c.id === updated.id ? updated : c))
     return updated
   }
-  const byPhone = state.clients.find(c => c.phone === ref.phone && c.telegramId === null)
-  if (byPhone) return byPhone
+  // Как в Prisma-репозитории: гость всегда новый клиент, без поиска по телефону.
   const created = { id: randomUUID(), name: ref.name, phone: ref.phone, telegramId: null }
   state.clients = [...state.clients, created]
   return created
@@ -150,6 +149,10 @@ export function createMemoryRepositories(state: MemoryState): Repositories {
         const found = state.bookings.find(b => b.manageToken === token)
         return found ? publicRecord(found) : null
       },
+      countUpcomingByPhone: async (phone, now) =>
+        state.bookings.filter(
+          b => b.status === 'confirmed' && b.startsAt > now && state.clients.find(c => c.id === b.clientId)?.phone === phone,
+        ).length,
       listByClient: async (clientId, limit) =>
         state.bookings
           .filter(b => b.clientId === clientId)

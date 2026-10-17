@@ -62,6 +62,46 @@ describe('POST /bookings', () => {
     expect(res.json<BookingDto>().totalPrice).toBe(120_000)
   })
 
+  it('имя с переносом строки отклоняется (нельзя подделать текст уведомления барберу)', async () => {
+    const app = await setup()
+    const res = await create(app, {
+      serviceIds: [IDS.haircut],
+      barberId: IDS.aziz,
+      startsAt: at('10:00'),
+      client: { name: 'Иван\nКлиент: Админ', phone: client.phone },
+    })
+    expect(res.statusCode).toBe(422)
+  })
+
+  it('чужой телефон не даёт доступа к клиенту владельца номера', async () => {
+    const app = await setup()
+    const victim = await create(app, { serviceIds: [IDS.haircut], barberId: IDS.aziz, startsAt: at('10:00'), client })
+    const attacker = await create(app, {
+      serviceIds: [IDS.haircut],
+      barberId: IDS.aziz,
+      startsAt: at('12:00'),
+      client: { name: 'Чужой', phone: client.phone },
+    })
+    expect(attacker.statusCode).toBe(201)
+    // Имя владельца номера не раскрывается, запись — у отдельного клиента.
+    expect(attacker.json<BookingDto>().client.name).toBe('Чужой')
+    const clientOf = (token: string) => app.state.bookings.find(b => b.manageToken === token)?.clientId
+    expect(clientOf(attacker.json<BookingDto>().manageToken)).not.toBe(clientOf(victim.json<BookingDto>().manageToken))
+  })
+  it('не больше 3 предстоящих записей на номер; после отмены можно снова', async () => {
+    const app = await setup()
+    const book = (barberId: string, time: string) => create(app, { serviceIds: [IDS.haircut], barberId, startsAt: at(time), client })
+    const first = await book(IDS.aziz, '10:00')
+    expect((await book(IDS.aziz, '11:00')).statusCode).toBe(201)
+    expect((await book(IDS.aziz, '12:00')).statusCode).toBe(201)
+    const fourth = await book(IDS.timur, '10:00')
+    expect(fourth.statusCode).toBe(409)
+    expect(fourth.json<{ code: string }>().code).toBe('TOO_MANY_BOOKINGS')
+    const token = first.json<BookingDto>().manageToken
+    expect((await app.app.inject({ method: 'POST', url: `/api/v1/bookings/${token}/cancel` })).statusCode).toBe(200)
+    expect((await book(IDS.timur, '10:00')).statusCode).toBe(201)
+  })
+
   it('занятое время → 409 SLOT_TAKEN', async () => {
     const app = await setup()
     const body = { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt: at('11:00'), client }

@@ -32,6 +32,12 @@ const ONE_MINUTE = '1 minute'
 const CORS_MAX_AGE_SEC = 600
 const BODY_LIMIT_BYTES = 64 * 1024
 
+/**
+ * Ошибки grammY несут payload (текст сообщения с телефоном клиента, кнопки со ссылкой на токен записи),
+ * а BotError — ctx (всё обновление от пользователя). pino копирует поля ошибки в лог как есть — скрываем их.
+ */
+export const LOG_REDACT_PATHS = ['err.payload', 'err.ctx', 'err.error.payload', 'err.error.ctx']
+
 function defaultLogger(level: string): FastifyServerOptions['logger'] {
   return {
     level,
@@ -40,6 +46,7 @@ function defaultLogger(level: string): FastifyServerOptions['logger'] {
     serializers: {
       req: request => ({ method: request.method, url: maskTokenInUrl(request.url), reqId: request.id }),
     },
+    redact: { paths: LOG_REDACT_PATHS, censor: '[скрыто]' },
   }
 }
 

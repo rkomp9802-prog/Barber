@@ -1,4 +1,4 @@
-import type { BookingDto, CreateBookingInput } from '@barber/shared'
+import { MAX_ACTIVE_BOOKINGS_PER_PHONE, type BookingDto, type CreateBookingInput } from '@barber/shared'
 import { changeRejection, rankFreeBarbers } from '../domain/booking-rules'
 import type { BookingRules } from '../domain/settings'
 import { checkStart, type BarberCalendar } from '../domain/slots'
@@ -66,6 +66,9 @@ export async function createBooking(
   const calendars = await loadCalendars(ctx.repos, quoted, day)
   const choice = rankFreeBarbers(calendars, start, rules, now)
   if (!choice.ok) throw new AppError(choice.reason)
+  // Лимит предстоящих записей на номер — в базе, общий для всех инстансов API.
+  const upcoming = await ctx.repos.bookings.countUpcomingByPhone(input.client.phone, new Date(now))
+  if (upcoming >= MAX_ACTIVE_BOOKINGS_PER_PHONE) throw new AppError('TOO_MANY_BOOKINGS')
   const client: BookingClientRef = telegramClient
     ? { kind: 'existing', clientId: telegramClient.id, name: input.client.name, phone: input.client.phone }
     : { kind: 'guest', name: input.client.name, phone: input.client.phone }
