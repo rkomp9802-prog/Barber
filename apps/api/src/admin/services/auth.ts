@@ -17,16 +17,16 @@ export type IssuedSession = {
  * Пароль и токен в логи не попадают.
  */
 export async function loginAdmin(ctx: AdminContext, input: AdminLoginInput): Promise<IssuedSession> {
-  if (ctx.throttle.retryAfterMs(input.login) > 0) {
+  if ((await ctx.throttle.retryAfterMs(input.login)) > 0) {
     throw new AppError('RATE_LIMITED', 'Слишком много неудачных входов. Подождите и попробуйте снова')
   }
   const user = await ctx.admin.auth.findUserByLogin(input.login)
   const passwordOk = await checkPassword(ctx, user?.passwordHash, input.password)
   if (!user || !passwordOk) {
-    ctx.throttle.recordFailure(input.login)
+    await ctx.throttle.recordFailure(input.login)
     throw new AppError('UNAUTHORIZED', 'Неверный логин или пароль')
   }
-  ctx.throttle.recordSuccess(input.login)
+  await ctx.throttle.recordSuccess(input.login)
   const now = adminNow(ctx)
   const token = generateSessionToken()
   const expiresAt = new Date(now.getTime() + SESSION_TTL_MS)

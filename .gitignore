@@ -16,3 +16,5 @@ playwright-report/
 apps/web/public/VideoBarber.mp4
 # Локальное состояние Supabase CLI (ref проекта, версии)
 supabase/.temp/
+# Резервные копии базы (npm run db:backup): содержат личные данные клиентов
+backups/

@@ -1,4 +1,5 @@
 import type { Db } from '../../../db/prisma'
+import type { LoginAttempt } from '../../auth/login-throttle'
 import type { AdminAuthRepository, AdminSessionRecord, AdminUserRecord, NewAdminSession } from '../types'
 
 /** Администраторы и сессии (admin_users, admin_sessions). В базе — только SHA-256 токена сессии. */
@@ -34,5 +35,26 @@ export class PrismaAdminAuthRepository implements AdminAuthRepository {
 
   async deleteExpiredSessions(adminUserId: string, now: Date): Promise<void> {
     await this.db.adminSession.deleteMany({ where: { adminUserId, expiresAt: { lte: now } } })
+  }
+
+  async getLoginAttempt(login: string): Promise<LoginAttempt | null> {
+    return this.db.adminLoginAttempt.findUnique({
+      where: { login },
+      select: { failures: true, lastFailureAt: true },
+    })
+  }
+
+  /** Один INSERT … ON CONFLICT: параллельные неудачные входы не теряют инкремент. */
+  async recordLoginFailure(login: string, now: Date, staleBefore: Date): Promise<void> {
+    await this.db.$executeRaw`
+      INSERT INTO admin_login_attempts (login, failures, last_failure_at)
+      VALUES (${login}, 1, ${now})
+      ON CONFLICT (login) DO UPDATE
+        SET failures = admin_login_attempts.failures + 1, last_failure_at = EXCLUDED.last_failure_at`
+    await this.db.adminLoginAttempt.deleteMany({ where: { lastFailureAt: { lt: staleBefore } } })
+  }
+
+  async clearLoginAttempts(login: string): Promise<void> {
+    await this.db.adminLoginAttempt.deleteMany({ where: { login } })
   }
 }

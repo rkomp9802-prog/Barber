@@ -1,3 +1,4 @@
+import type { LoginAttemptStore } from '../auth/login-throttle'
 import type { BookingSource, BookingStatus, TimeOffType, WeeklyRangeDto } from '@barber/shared'
 import type { BookingRecord } from '../../repositories/types'
 
@@ -18,7 +19,7 @@ export type AdminSessionRecord = {
 
 export type NewAdminSession = { readonly adminUserId: string; readonly tokenHash: string; readonly expiresAt: Date }
 
-export interface AdminAuthRepository {
+export interface AdminAuthRepository extends LoginAttemptStore {
   findUserByLogin(login: string): Promise<AdminUserRecord | null>
   createSession(input: NewAdminSession): Promise<void>
   /** Только действующая (expiresAt > now) сессия. */

@@ -237,6 +237,15 @@ model AdminSession {
   @@map("admin_sessions")
 }
 
+/// Неудачные входы в админку по логину — общий счётчик для всех инстансов API.
+model AdminLoginAttempt {
+  login         String   @id
+  failures      Int
+  lastFailureAt DateTime @map("last_failure_at") @db.Timestamptz(6)
+
+  @@map("admin_login_attempts")
+}
+
 /// Одноразовые коды привязки барбера к Telegram (t.me/<bot>?start=barber_<code>).
 model BarberLinkCode {
   code      String    @id

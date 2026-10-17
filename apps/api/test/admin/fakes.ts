@@ -1,4 +1,5 @@
 import { hash } from '@node-rs/argon2'
+import type { LoginAttempt } from '../../src/admin/auth/login-throttle'
 import { randomUUID } from 'node:crypto'
 import type { BookingStatus } from '@barber/shared'
 import type { BarberServiceLink } from '../../src/domain/pricing'
@@ -301,6 +302,7 @@ function reviewRepo(state: AdminMemoryState): AdminRepositories['reviews'] {
 
 /** In-memory реализация админских репозиториев над тем же состоянием, что и основные. */
 export function createAdminMemoryRepositories(state: AdminMemoryState): AdminRepositories {
+  const loginAttempts = new Map<string, LoginAttempt>()
   return {
     auth: {
       findUserByLogin: async login => state.adminUsers.find(user => user.login === login) ?? null,
@@ -317,6 +319,14 @@ export function createAdminMemoryRepositories(state: AdminMemoryState): AdminRep
       },
       deleteExpiredSessions: async (adminUserId, now) => {
         state.sessions = state.sessions.filter(item => item.adminUserId !== adminUserId || item.expiresAt > now)
+      },
+      getLoginAttempt: async login => loginAttempts.get(login) ?? null,
+      recordLoginFailure: async (login, now, staleBefore) => {
+        for (const [key, entry] of loginAttempts) if (entry.lastFailureAt < staleBefore) loginAttempts.delete(key)
+        loginAttempts.set(login, { failures: (loginAttempts.get(login)?.failures ?? 0) + 1, lastFailureAt: now })
+      },
+      clearLoginAttempts: async login => {
+        loginAttempts.delete(login)
       },
     },
     services: catalogRepo(state),

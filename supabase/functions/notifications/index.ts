@@ -61,13 +61,16 @@ async function run(env: Env): Promise<RunSummary> {
 async function handle(request: Request): Promise<Response> {
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' })
 
+  // Сначала секрет: чужой запрос не должен узнать даже то, настроена ли функция.
+  const cronSecret = Deno.env.get('CRON_SECRET')
+  if (!isSecretConfigured(cronSecret) || !isAuthorized(request.headers.get('Authorization'), cronSecret)) {
+    if (!isSecretConfigured(cronSecret)) console.error(JSON.stringify({ event: 'notifications_misconfigured' }))
+    return json(401, { error: 'unauthorized' })
+  }
   const env = readEnv()
   if (!env) {
     console.error(JSON.stringify({ event: 'notifications_misconfigured' }))
     return json(500, { error: 'misconfigured' })
-  }
-  if (!isAuthorized(request.headers.get('Authorization'), env.cronSecret)) {
-    return json(401, { error: 'unauthorized' })
   }
 
   try {

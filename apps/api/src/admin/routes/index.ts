@@ -33,7 +33,7 @@ export function createAdminRoutes(options: AdminRouteOptions): RoutePlugin {
       core: deps.ctx,
       config: options.config,
       passwords: options.passwords ?? createArgon2Verifier(),
-      throttle: new LoginThrottle(deps.ctx.now),
+      throttle: new LoginThrottle(options.repos.auth, () => new Date(deps.ctx.now())),
     }
     await app.register(async admin => registerAdmin(admin, ctx), { prefix: ADMIN_API_PREFIX })
   }

@@ -62,6 +62,9 @@ npm run dev
 Миграции и тестовые данные: `npm run db:migrate -w @barber/api`, затем `npm run db:seed -w @barber/api`.
 Seed создаёт первого администратора по `ADMIN_LOGIN` и `ADMIN_PASSWORD` из `.env`.
 
+Резервная копия данных: `npm run db:backup -w @barber/api`. Каждая таблица сохраняется в JSON в `backups/<дата-время>/`.
+В копии есть имена и телефоны клиентов, поэтому папка `backups/` в `.gitignore`: храните её только у себя.
+
 ### Админка
 
 - Вход: http://localhost:3000/admin/login, панель: http://localhost:3000/admin.

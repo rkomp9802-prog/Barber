@@ -3,65 +3,67 @@
  * Первые freeAttempts ошибок — без задержки, дальше блокировка растёт вдвое:
  * 30 с, 1 мин, 2 мин … но не больше 15 минут. Успешный вход сбрасывает счётчик.
  *
- * Хранится в памяти процесса: на Vercel у каждого инстанса свой счётчик —
- * для учебного проекта этого достаточно, основная защита — rate limit и Argon2.
+ * Счётчик хранится в базе (admin_login_attempts): на Vercel много инстансов, и счётчик
+ * в памяти процесса позволял бы распределить перебор пароля по ним.
  */
+
+export type LoginAttempt = { readonly failures: number; readonly lastFailureAt: Date }
+
+/** Хранилище счётчиков. Реализация — AdminAuthRepository (Prisma) или in-memory в тестах. */
+export interface LoginAttemptStore {
+  getLoginAttempt(login: string): Promise<LoginAttempt | null>
+  /** Атомарно: failures + 1, lastFailureAt = now. Заодно удаляет записи старше staleBefore. */
+  recordLoginFailure(login: string, now: Date, staleBefore: Date): Promise<void>
+  clearLoginAttempts(login: string): Promise<void>
+}
 
 export type LoginThrottleOptions = {
   readonly freeAttempts: number
   readonly baseDelayMs: number
   readonly maxDelayMs: number
-  /** Сколько логинов помнить (защита памяти от перебора случайных логинов). */
-  readonly maxEntries: number
+  /** Через сколько после последней ошибки счётчик забывается. */
+  readonly forgetAfterMs: number
 }
 
 const DEFAULT_OPTIONS: LoginThrottleOptions = {
   freeAttempts: 5,
   baseDelayMs: 30_000,
   maxDelayMs: 15 * 60_000,
-  maxEntries: 10_000,
+  forgetAfterMs: 24 * 60 * 60_000,
 }
 
-type Entry = { readonly failures: number; readonly lastFailureAt: number }
-
 export class LoginThrottle {
-  private entries: ReadonlyMap<string, Entry> = new Map()
   private readonly options: LoginThrottleOptions
 
   constructor(
-    private readonly now: () => number,
+    private readonly store: LoginAttemptStore,
+    private readonly now: () => Date,
     options: Partial<LoginThrottleOptions> = {},
   ) {
     this.options = { ...DEFAULT_OPTIONS, ...options }
   }
 
   /** Сколько мс ещё ждать до следующей попытки (0 — можно). */
-  retryAfterMs(login: string): number {
-    const entry = this.entries.get(normalize(login))
+  async retryAfterMs(login: string): Promise<number> {
+    const entry = await this.store.getLoginAttempt(normalize(login))
+    const now = this.now().getTime()
     if (!entry || entry.failures < this.options.freeAttempts) return 0
+    if (now - entry.lastFailureAt.getTime() > this.options.forgetAfterMs) return 0
     const exponent = entry.failures - this.options.freeAttempts
     const delay = Math.min(this.options.baseDelayMs * 2 ** exponent, this.options.maxDelayMs)
-    return Math.max(0, entry.lastFailureAt + delay - this.now())
+    return Math.max(0, entry.lastFailureAt.getTime() + delay - now)
   }
 
-  recordFailure(login: string): void {
-    const key = normalize(login)
-    const failures = (this.entries.get(key)?.failures ?? 0) + 1
-    const kept = this.entries.size >= this.options.maxEntries ? dropOldest(this.entries) : this.entries
-    this.entries = new Map([...kept, [key, { failures, lastFailureAt: this.now() }]])
+  async recordFailure(login: string): Promise<void> {
+    const now = this.now()
+    await this.store.recordLoginFailure(normalize(login), now, new Date(now.getTime() - this.options.forgetAfterMs))
   }
 
-  recordSuccess(login: string): void {
-    const key = normalize(login)
-    if (!this.entries.has(key)) return
-    this.entries = new Map([...this.entries].filter(([existing]) => existing !== key))
+  async recordSuccess(login: string): Promise<void> {
+    await this.store.clearLoginAttempts(normalize(login))
   }
 }
 
 function normalize(login: string): string {
   return login.trim().toLowerCase()
-}
-
-function dropOldest(entries: ReadonlyMap<string, Entry>): ReadonlyMap<string, Entry> {
-  return new Map([...entries].toSorted(([, a], [, b]) => a.lastFailureAt - b.lastFailureAt).slice(1))
 }
