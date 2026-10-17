@@ -7,7 +7,8 @@ export class PrismaAnalyticsRepository implements AnalyticsRepository {
 
   async listBookings(from: Date, to: Date): Promise<AnalyticsBooking[]> {
     const rows = await this.db.booking.findMany({
-      where: { startsAt: { gte: from, lt: to } },
+      // Неподтверждённые (pending) записи — ещё не записи: в аналитику не попадают.
+      where: { startsAt: { gte: from, lt: to }, status: { not: 'pending' } },
       select: {
         id: true,
         barberId: true,

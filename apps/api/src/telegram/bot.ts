@@ -1,5 +1,6 @@
 import { Bot, type BotConfig, type Context, type NextFunction } from 'grammy'
 import type { BotDeps } from './deps'
+import { contactHandlers } from './handlers/contact'
 import { menuHandlers } from './handlers/menu'
 import { reviewHandlers } from './handlers/reviews'
 import { startHandlers } from './handlers/start'
@@ -39,6 +40,7 @@ export function installHandlers(bot: Bot, deps: BotDeps): Bot {
   bot.use(errorBoundary(deps))
   const privateChats = bot.chatType('private')
   privateChats.use(startHandlers(deps))
+  privateChats.use(contactHandlers(deps))
   privateChats.use(reviewHandlers(deps))
   privateChats.use(menuHandlers(deps))
   privateChats.on('callback_query:data', ctx => ctx.answerCallbackQuery({ text: 'Кнопка устарела' }))

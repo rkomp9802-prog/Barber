@@ -87,7 +87,7 @@ async function calendarFor(
   span: Interval,
   excludeBookingId?: string,
 ): Promise<BarberCalendar> {
-  const [calendar] = await loadCalendars(ctx.core.repos, quoted, span, excludeBookingId)
+  const [calendar] = await loadCalendars(ctx.core.repos, quoted, span, ctx.core.now(), excludeBookingId)
   return requireFound(calendar, 'Барбер не найден')
 }
 
@@ -121,7 +121,9 @@ export async function createManualBooking(ctx: AdminContext, input: BookingCreat
     manageToken: generateManageToken(),
     client: { kind: 'guest', name: input.client.name, phone: input.client.phone },
     services: quote.quote.items,
-  })
+    // Ручная запись администратора подтверждается сразу: клиент позвонил, номер подтверждать не нужно.
+    hold: null,
+  }, new Date(ctx.core.now()))
   return toBookingDto(booking)
 }
 

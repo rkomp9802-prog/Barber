@@ -125,12 +125,14 @@ model TimeOff {
 }
 
 model Client {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name           String
-  phone          String?
-  telegramId     BigInt?  @unique @map("telegram_id")
-  telegramChatId BigInt?  @map("telegram_chat_id")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  phone           String?
+  telegramId      BigInt?   @unique @map("telegram_id")
+  telegramChatId  BigInt?   @map("telegram_chat_id")
+  /// Номер подтверждён через Telegram («Поделиться номером») этим telegram_id.
+  phoneVerifiedAt DateTime? @map("phone_verified_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   bookings Booking[]
   reviews  Review[]
@@ -141,24 +143,30 @@ model Client {
 
 /// status: confirmed | completed | cancelled | no_show; source: web | telegram | admin (CHECK в SQL).
 model Booking {
-  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  clientId           String    @map("client_id") @db.Uuid
-  barberId           String    @map("barber_id") @db.Uuid
-  startsAt           DateTime  @map("starts_at") @db.Timestamptz(6)
-  endsAt             DateTime  @map("ends_at") @db.Timestamptz(6)
-  totalPrice         Int       @map("total_price")
-  totalDurationMin   Int       @map("total_duration_min")
-  status             String    @default("confirmed")
-  source             String    @default("web")
-  manageToken        String    @unique @map("manage_token")
-  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  reminderDaySentAt  DateTime? @map("reminder_day_sent_at") @db.Timestamptz(6)
-  reminder30mSentAt  DateTime? @map("reminder_30m_sent_at") @db.Timestamptz(6)
-  reviewRequestedAt  DateTime? @map("review_requested_at") @db.Timestamptz(6)
-  autoCompletedAt    DateTime? @map("auto_completed_at") @db.Timestamptz(6)
+  id                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clientId          String                    @map("client_id") @db.Uuid
+  barberId          String                    @map("barber_id") @db.Uuid
+  startsAt          DateTime                  @map("starts_at") @db.Timestamptz(6)
+  endsAt            DateTime                  @map("ends_at") @db.Timestamptz(6)
+  totalPrice        Int                       @map("total_price")
+  totalDurationMin  Int                       @map("total_duration_min")
+  status            String                    @default("confirmed")
+  source            String                    @default("web")
+  manageToken       String                    @unique @map("manage_token")
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime                  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reminderDaySentAt DateTime?                 @map("reminder_day_sent_at") @db.Timestamptz(6)
+  reminder30mSentAt DateTime?                 @map("reminder_30m_sent_at") @db.Timestamptz(6)
+  reviewRequestedAt DateTime?                 @map("review_requested_at") @db.Timestamptz(6)
+  autoCompletedAt   DateTime?                 @map("auto_completed_at") @db.Timestamptz(6)
+  /// Для pending: до какого момента держим слот, пока клиент подтверждает номер в Telegram.
+  holdExpiresAt     DateTime?                 @map("hold_expires_at") @db.Timestamptz(6)
+  /// Для pending: Telegram-пользователь, который открыл ссылку подтверждения и должен прислать номер.
+  claimTelegramId   BigInt?                   @map("claim_telegram_id")
+  /// Для pending: SHA-256 IP создателя (лимит одновременных неподтверждённых записей с одного адреса).
+  holdIpHash        String?                   @map("hold_ip_hash")
   /// GENERATED ALWAYS AS tstzrange(starts_at, ends_at, '[)') STORED — создаётся SQL-миграцией.
-  timeRange          Unsupported("tstzrange")? @map("time_range")
+  timeRange         Unsupported("tstzrange")? @map("time_range")
 
   client   Client           @relation(fields: [clientId], references: [id], onDelete: Restrict)
   barber   Barber           @relation(fields: [barberId], references: [id], onDelete: Restrict)
@@ -168,6 +176,8 @@ model Booking {
   @@index([barberId, startsAt])
   @@index([status, startsAt])
   @@index([clientId])
+  @@index([status, holdExpiresAt])
+  @@index([claimTelegramId])
   @@map("bookings")
 }
 

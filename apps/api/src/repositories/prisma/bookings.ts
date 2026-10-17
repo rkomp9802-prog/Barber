@@ -40,7 +40,29 @@ export function toRecord(row: BookingRow): BookingRecord {
     manageToken: row.manageToken,
     services: row.services.map(s => ({ serviceId: s.serviceId, name: s.name, durationMin: s.durationMin, price: s.price })),
     createdAt: row.createdAt,
+    holdExpiresAt: row.holdExpiresAt,
   }
+}
+
+/** Живые записи: подтверждённые и pending, срок удержания которых ещё не прошёл. */
+export function liveBookingWhere(now: Date): Prisma.BookingWhereInput {
+  return { OR: [{ status: 'confirmed' }, { status: 'pending', holdExpiresAt: { gt: now } }] }
+}
+
+/**
+ * Просроченные pending этого барбера, пересекающиеся с [startsAt, endsAt), удаляем перед вставкой:
+ * exclusion constraint видит их как занятые, хотя слот уже свободен.
+ */
+async function dropExpiredHolds(tx: Tx, input: NewBooking, now: Date): Promise<void> {
+  await tx.booking.deleteMany({
+    where: {
+      barberId: input.barberId,
+      status: 'pending',
+      holdExpiresAt: { lte: now },
+      startsAt: { lt: input.endsAt },
+      endsAt: { gt: input.startsAt },
+    },
+  })
 }
 
 /**
@@ -60,8 +82,9 @@ async function resolveClientId(tx: Tx, ref: BookingClientRef): Promise<string> {
 export class PrismaBookingRepository implements BookingRepository {
   constructor(private readonly db: Db) {}
 
-  async create(input: NewBooking): Promise<BookingRecord> {
+  async create(input: NewBooking, now: Date): Promise<BookingRecord> {
     const row = await this.db.$transaction(async tx => {
+      await dropExpiredHolds(tx, input, now)
       const clientId = await resolveClientId(tx, input.client)
       return tx.booking.create({
         data: {
@@ -71,7 +94,9 @@ export class PrismaBookingRepository implements BookingRepository {
           endsAt: input.endsAt,
           totalPrice: input.totalPrice,
           totalDurationMin: input.totalDurationMin,
-          status: 'confirmed',
+          status: input.hold ? 'pending' : 'confirmed',
+          holdExpiresAt: input.hold?.expiresAt ?? null,
+          holdIpHash: input.hold?.ipHash ?? null,
           source: input.source,
           manageToken: input.manageToken,
           services: { create: input.services.map(s => ({ ...s })) },
@@ -89,6 +114,15 @@ export class PrismaBookingRepository implements BookingRepository {
 
   async countUpcomingByPhone(phone: string, now: Date): Promise<number> {
     return this.db.booking.count({ where: { status: 'confirmed', startsAt: { gt: now }, client: { phone } } })
+  }
+
+  async countLivePendingByIp(ipHash: string, now: Date): Promise<number> {
+    return this.db.booking.count({ where: { status: 'pending', holdExpiresAt: { gt: now }, holdIpHash: ipHash } })
+  }
+
+  async discardPending(id: string): Promise<boolean> {
+    const { count } = await this.db.booking.deleteMany({ where: { id, status: 'pending' } })
+    return count > 0
   }
 
   async listByClient(clientId: string, limit: number): Promise<BookingRecord[]> {

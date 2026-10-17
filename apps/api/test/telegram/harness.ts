@@ -127,7 +127,9 @@ export function addClient(state: MemoryState, telegramId: number | null, id = CL
 /** Подтверждённая запись барбера Тимура на 10:00 понедельника (по умолчанию). */
 export function addBooking(
   state: MemoryState,
-  overrides: Partial<Pick<MemoryState['bookings'][number], 'status' | 'clientId' | 'startsAt' | 'endsAt' | 'client'>> = {},
+  overrides: Partial<
+    Pick<MemoryState['bookings'][number], 'status' | 'clientId' | 'startsAt' | 'endsAt' | 'client' | 'holdExpiresAt'>
+  > = {},
 ): void {
   const startsAt = overrides.startsAt ?? new Date(tashkent(MONDAY, '10:00'))
   const endsAt = overrides.endsAt ?? new Date(startsAt.getTime() + 60 * 60 * 1000)
@@ -148,6 +150,7 @@ export function addBooking(
       manageToken: MANAGE_TOKEN,
       services: [{ serviceId: IDS.haircut, name: 'Мужская стрижка', durationMin: 60, price: 120_000 }],
       createdAt: new Date(NOW),
+      holdExpiresAt: overrides.holdExpiresAt ?? null,
       reminderDaySentAt: null,
       reminder30mSentAt: null,
     },

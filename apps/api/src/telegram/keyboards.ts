@@ -31,6 +31,13 @@ export function isHttpsUrl(url: string | undefined): url is string {
 }
 
 /** Главное меню: «Записаться» (Mini App), «Мои записи», «Контакты». */
+/** Кнопка отправки собственного номера (Telegram пришлёт контакт с user_id отправителя). */
+export const CONTACT_BUTTON = '📱 Поделиться номером'
+
+export function contactRequestKeyboard(): Keyboard {
+  return new Keyboard().requestContact(CONTACT_BUTTON).resized().oneTime()
+}
+
 export function mainMenu(miniAppUrl: string | undefined): Keyboard {
   const base = isHttpsUrl(miniAppUrl) ? new Keyboard().webApp(MENU.book, miniAppUrl).row() : new Keyboard()
   return base.text(MENU.bookings).text(MENU.contacts).resized().persistent()

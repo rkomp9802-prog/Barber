@@ -11,6 +11,19 @@ export type ClientTelegramInfo = {
   readonly id: string
   readonly telegramId: bigint | null
   readonly telegramChatId: bigint | null
+  readonly phone: string | null
+  /** Номер подтверждён кнопкой «Поделиться номером» этим telegram_id. */
+  readonly phoneVerifiedAt: Date | null
+}
+
+export type VerifiedPhoneInput = {
+  readonly telegramId: bigint
+  readonly chatId: bigint
+  /** Уже проверенный и приведённый к +998XXXXXXXXX номер из контакта самого пользователя. */
+  readonly phone: string
+  /** Имя для нового клиента (если клиента с этим Telegram ещё нет). */
+  readonly name: string
+  readonly now: Date
 }
 
 /** Результат погашения одноразового кода барбера. */
@@ -38,4 +51,15 @@ export interface TelegramRepository {
   consumeBarberLinkCode(code: string, now: Date, chatId: bigint): Promise<ConsumedLinkCode | null>
   /** Ставит комментарий к отзыву записи, только если комментария ещё нет. false — нечего обновлять. */
   setReviewComment(bookingId: string, comment: string): Promise<boolean>
+  /** Клиент с этим Telegram (создаётся при необходимости) получает подтверждённый номер. Возвращает id клиента. */
+  verifyPhone(input: VerifiedPhoneInput): Promise<string>
+  /** Этот Telegram взялся подтвердить pending-запись. false — запись уже не pending или срок истёк. */
+  claimPending(bookingId: string, telegramId: bigint, now: Date): Promise<boolean>
+  /** Живые pending, которые этот Telegram взялся подтвердить. */
+  listClaimedPending(telegramId: bigint, now: Date): Promise<BookingRecord[]>
+  /**
+   * Атомарно: запись pending и срок не истёк → confirmed; запись переходит к клиенту clientId,
+   * его имя — то, что ввели при записи. null — подтвердить уже нельзя.
+   */
+  confirmPending(bookingId: string, clientId: string, now: Date): Promise<BookingRecord | null>
 }

@@ -28,7 +28,7 @@ export class PrismaClientRepository implements ClientRepository {
       create: { telegramId: input.telegramId, name: input.name },
       update: {},
     })
-    return { id: row.id, name: row.name, phone: row.phone, telegramId: row.telegramId }
+    return { id: row.id, name: row.name, phone: row.phone, telegramId: row.telegramId, phoneVerifiedAt: row.phoneVerifiedAt }
   }
 }
 

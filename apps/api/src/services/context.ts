@@ -13,8 +13,8 @@ export type ServiceContext = {
   readonly telegramBotUsername: string | undefined
 }
 
-/** Сервису нужен логгер запроса — для ошибок уведомлений. */
-export type RequestScope = { readonly log: FastifyBaseLogger }
+/** Сервису нужен логгер запроса (ошибки уведомлений) и IP клиента (лимит неподтверждённых записей). */
+export type RequestScope = { readonly log: FastifyBaseLogger; readonly ip?: string }
 
 export async function loadRules(ctx: ServiceContext): Promise<BookingRules> {
   return parseBookingRules(await ctx.repos.settings.getAll())

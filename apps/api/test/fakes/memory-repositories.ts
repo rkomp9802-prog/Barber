@@ -22,8 +22,13 @@ export type MemoryState = {
   breaks: BarberWeeklyRange[]
   timeOff: TimeOffRecord[]
   settings: Record<string, unknown>
-  clients: { id: string; name: string; phone: string | null; telegramId: bigint | null }[]
-  bookings: (BookingRecord & { reminderDaySentAt: Date | null; reminder30mSentAt: Date | null })[]
+  clients: { id: string; name: string; phone: string | null; telegramId: bigint | null; phoneVerifiedAt?: Date | null }[]
+  bookings: (BookingRecord & {
+    reminderDaySentAt: Date | null
+    reminder30mSentAt: Date | null
+    holdIpHash?: string | null
+    claimTelegramId?: bigint | null
+  })[]
   reviews: (NewReview & { id: string; createdAt: Date })[]
 }
 
@@ -34,12 +39,21 @@ function exclusionError(): Error {
   return Object.assign(new Error('conflicting key value violates exclusion constraint "bookings_no_overlap"'), { code: '23P01' })
 }
 
+/** Как WHERE у bookings_no_overlap: слот занимают pending и confirmed. */
+const holdsSlot = (booking: StoredBooking): boolean => booking.status === 'pending' || booking.status === 'confirmed'
+
+/** Живая запись: подтверждённая или pending с непрошедшим сроком удержания. */
+export function isLive(booking: StoredBooking, now: Date): boolean {
+  if (booking.status === 'confirmed') return true
+  return booking.status === 'pending' && booking.holdExpiresAt !== null && booking.holdExpiresAt > now
+}
+
 function assertNoOverlap(state: MemoryState, candidate: StoredBooking): void {
   const clash = state.bookings.some(
     other =>
       other.id !== candidate.id &&
-      other.status === 'confirmed' &&
-      candidate.status === 'confirmed' &&
+      holdsSlot(other) &&
+      holdsSlot(candidate) &&
       other.barberId === candidate.barberId &&
       other.startsAt < candidate.endsAt &&
       candidate.startsAt < other.endsAt,
@@ -48,7 +62,7 @@ function assertNoOverlap(state: MemoryState, candidate: StoredBooking): void {
 }
 
 function publicRecord(booking: StoredBooking): BookingRecord {
-  const { reminderDaySentAt: _day, reminder30mSentAt: _short, ...record } = booking
+  const { reminderDaySentAt: _day, reminder30mSentAt: _short, holdIpHash: _ip, claimTelegramId: _claim, ...record } = booking
   return { ...record, client: { ...record.client }, services: record.services.map(s => ({ ...s })) }
 }
 
@@ -67,7 +81,19 @@ function resolveClient(state: MemoryState, input: NewBooking): MemoryState['clie
   return created
 }
 
-function createBooking(state: MemoryState, input: NewBooking): BookingRecord {
+function createBooking(state: MemoryState, input: NewBooking, now: Date): BookingRecord {
+  // Как в Prisma: просроченные pending этого барбера на это время удаляются перед вставкой.
+  state.bookings = state.bookings.filter(
+    b =>
+      !(
+        b.status === 'pending' &&
+        b.barberId === input.barberId &&
+        b.holdExpiresAt !== null &&
+        b.holdExpiresAt <= now &&
+        b.startsAt < input.endsAt &&
+        input.startsAt < b.endsAt
+      ),
+  )
   const client = resolveClient(state, input)
   const barber = state.barbers.find(b => b.id === input.barberId)
   const booking: StoredBooking = {
@@ -76,7 +102,10 @@ function createBooking(state: MemoryState, input: NewBooking): BookingRecord {
     barberId: input.barberId,
     barberName: barber?.name ?? '',
     client: { name: client.name, phone: client.phone },
-    status: 'confirmed',
+    status: input.hold ? 'pending' : 'confirmed',
+    holdExpiresAt: input.hold?.expiresAt ?? null,
+    holdIpHash: input.hold?.ipHash ?? null,
+    claimTelegramId: null,
     source: input.source,
     startsAt: input.startsAt,
     endsAt: input.endsAt,
@@ -137,14 +166,14 @@ export function createMemoryRepositories(state: MemoryState): Repositories {
       listBreaks: async ids => state.breaks.filter(h => ids.includes(h.barberId)),
       listTimeOff: async (ids, from, to) =>
         state.timeOff.filter(t => (t.barberId === null || ids.includes(t.barberId)) && overlaps(t, from, to)),
-      listConfirmedBookings: async (ids, from, to, excludeId) =>
+      listBusyBookings: async (ids, from, to, now, excludeId) =>
         state.bookings
-          .filter(b => b.status === 'confirmed' && ids.includes(b.barberId) && b.id !== excludeId && overlaps(b, from, to))
+          .filter(b => isLive(b, now) && ids.includes(b.barberId) && b.id !== excludeId && overlaps(b, from, to))
           .map(b => ({ barberId: b.barberId, startsAt: b.startsAt, endsAt: b.endsAt })),
     },
     settings: { getAll: async () => ({ ...state.settings }) },
     bookings: {
-      create: async input => createBooking(state, input),
+      create: async (input, now) => createBooking(state, input, now),
       findByToken: async token => {
         const found = state.bookings.find(b => b.manageToken === token)
         return found ? publicRecord(found) : null
@@ -153,6 +182,13 @@ export function createMemoryRepositories(state: MemoryState): Repositories {
         state.bookings.filter(
           b => b.status === 'confirmed' && b.startsAt > now && state.clients.find(c => c.id === b.clientId)?.phone === phone,
         ).length,
+      countLivePendingByIp: async (ipHash, now) =>
+        state.bookings.filter(b => b.status === 'pending' && isLive(b, now) && b.holdIpHash === ipHash).length,
+      discardPending: async id => {
+        const before = state.bookings.length
+        state.bookings = state.bookings.filter(b => !(b.id === id && b.status === 'pending'))
+        return state.bookings.length < before
+      },
       listByClient: async (clientId, limit) =>
         state.bookings
           .filter(b => b.clientId === clientId)
@@ -166,8 +202,8 @@ export function createMemoryRepositories(state: MemoryState): Repositories {
     clients: {
       findOrCreateByTelegram: async input => {
         const existing = state.clients.find(c => c.telegramId === input.telegramId)
-        if (existing) return existing
-        const created = { id: randomUUID(), name: input.name, phone: null, telegramId: input.telegramId }
+        if (existing) return { ...existing, phoneVerifiedAt: existing.phoneVerifiedAt ?? null }
+        const created = { id: randomUUID(), name: input.name, phone: null, telegramId: input.telegramId, phoneVerifiedAt: null }
         state.clients = [...state.clients, created]
         return created
       },
@@ -200,4 +236,16 @@ export function createMemoryRepositories(state: MemoryState): Repositories {
 /** Помогает тестам менять статус записи (как это сделает админка или cron). */
 export function setBookingStatus(state: MemoryState, id: string, status: BookingStatus): void {
   state.bookings = state.bookings.map(b => (b.id === id ? { ...b, status } : b))
+}
+
+/** Как будто клиент подтвердил запись в боте: confirmed, срок удержания снят. */
+export function confirmBooking(state: MemoryState, id: string): void {
+  state.bookings = state.bookings.map(b => (b.id === id ? { ...b, status: 'confirmed', holdExpiresAt: null } : b))
+}
+
+/** Клиент Mini App, который уже поделился номером в Telegram. */
+export function addVerifiedTelegramClient(state: MemoryState, telegramId: bigint, name: string, phone: string): string {
+  const id = randomUUID()
+  state.clients = [...state.clients, { id, name, phone, telegramId, phoneVerifiedAt: new Date(0) }]
+  return id
 }

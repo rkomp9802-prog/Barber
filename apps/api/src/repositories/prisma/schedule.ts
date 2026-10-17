@@ -1,5 +1,6 @@
 import type { Db } from '../../db/prisma'
 import type { BarberWeeklyRange, BusyRecord, ScheduleRepository, TimeOffRecord } from '../types'
+import { liveBookingWhere } from './bookings'
 
 type RangeRow = { barberId: string; weekday: number; startTime: string; endTime: string }
 
@@ -32,16 +33,17 @@ export class PrismaScheduleRepository implements ScheduleRepository {
     return rows
   }
 
-  async listConfirmedBookings(
+  async listBusyBookings(
     barberIds: readonly string[],
     from: Date,
     to: Date,
+    now: Date,
     excludeBookingId?: string,
   ): Promise<BusyRecord[]> {
     const rows = await this.db.booking.findMany({
       where: {
         barberId: { in: [...barberIds] },
-        status: 'confirmed',
+        ...liveBookingWhere(now),
         startsAt: { lt: to },
         endsAt: { gt: from },
         ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),

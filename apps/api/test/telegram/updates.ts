@@ -44,6 +44,23 @@ export function textUpdate(
   }
 }
 
+/** Контакт, отправленный кнопкой «Поделиться номером» (или пересланный чужой — userId другого человека). */
+export function contactUpdate(phoneNumber: string, options: { fromId?: number; userId?: number | null } = {}): Update {
+  const fromId = options.fromId ?? TG_USER_ID
+  const messageId = nextId()
+  const userId = options.userId === undefined ? fromId : options.userId
+  return {
+    update_id: messageId,
+    message: {
+      message_id: messageId,
+      date: NOW_SEC,
+      chat: privateChat(fromId),
+      from: userFrom(fromId),
+      contact: { phone_number: phoneNumber, first_name: FIRST_NAME, ...(userId === null ? {} : { user_id: userId }) },
+    },
+  }
+}
+
 /** /start с необязательным payload (deep link). */
 export function startUpdate(payload: string | undefined, fromId = TG_USER_ID): Update {
   const text = payload ? `/start ${payload}` : '/start'

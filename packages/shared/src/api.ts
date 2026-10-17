@@ -13,7 +13,8 @@ const dateKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Дата должна �
 const isoDateTime = z.string().datetime({ offset: true })
 const uzPhone = z.string().regex(/^\+998\d{9}$/, 'Телефон в формате +998XXXXXXXXX')
 
-export const BOOKING_STATUSES = ['confirmed', 'completed', 'cancelled', 'no_show'] as const
+/** pending — запись с сайта ждёт подтверждения номера в Telegram (слот держится BOOKING_HOLD_MIN минут). */
+export const BOOKING_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'] as const
 export const BOOKING_SOURCES = ['web', 'telegram', 'admin'] as const
 export type BookingStatus = (typeof BOOKING_STATUSES)[number]
 export type BookingSource = (typeof BOOKING_SOURCES)[number]
@@ -31,6 +32,7 @@ export const API_ERROR_CODES = [
   'CUTOFF_PASSED', // 422 — отмена/перенос позже cancel_cutoff_min
   'BOOKING_NOT_ACTIVE', // 409 — запись уже отменена/завершена
   'TOO_MANY_BOOKINGS', // 409 — у номера уже MAX_ACTIVE_BOOKINGS_PER_PHONE предстоящих записей
+  'PHONE_NOT_VERIFIED', // 403 — Mini App: сначала поделитесь номером в Telegram
   'UNAUTHORIZED', // 401
   'RATE_LIMITED', // 429
   'FORBIDDEN', // 403 — админка: нет CSRF-заголовка или чужой Origin
@@ -41,6 +43,12 @@ export type ApiErrorCode = (typeof API_ERROR_CODES)[number]
 
 /** Сколько предстоящих записей может быть на один номер: защита от скриптов, занимающих все слоты. */
 export const MAX_ACTIVE_BOOKINGS_PER_PHONE = 3
+
+/** Сколько минут запись с сайта ждёт подтверждения в Telegram, прежде чем слот освободится. */
+export const BOOKING_HOLD_MIN = 10
+
+/** Онлайн-запись только с номерами Узбекистана: +998 и 9 цифр. */
+export const UZ_PHONE_PATTERN = /^\+998\d{9}$/
 
 /** Тело любого ответа с ошибкой. */
 export type ApiError = {
@@ -162,8 +170,21 @@ export type BookingDto = {
   manageToken: string
   /** Можно ли ещё отменить/перенести (учитывает cancel_cutoff_min). */
   canChange: boolean
-  /** Ссылка t.me/<bot>?start=b_<token> для привязки Telegram, если бот настроен. */
+  /**
+   * Ссылка t.me/<bot>?start=b_<token>, если бот настроен: для записи pending — подтверждение номера,
+   * для подтверждённой — привязка Telegram для напоминаний.
+   */
   telegramLink: string | null
+  /** Для pending: до какого момента (UTC) нужно подтвердить запись в Telegram. Иначе null. */
+  holdExpiresAt: string | null
+}
+
+/** GET /me — профиль клиента Mini App. */
+export type MeDto = {
+  name: string
+  /** Номер, подтверждённый через Telegram («Поделиться номером»), иначе null. */
+  phone: string | null
+  phoneVerified: boolean
 }
 
 /** POST /bookings/:token/reschedule */

@@ -363,7 +363,7 @@ function analyticsRepo(state: AdminMemoryState): AdminRepositories['analytics'] 
   return {
     listBookings: async (from, to) =>
       state.bookings
-        .filter(booking => booking.startsAt >= from && booking.startsAt < to)
+        .filter(booking => booking.startsAt >= from && booking.startsAt < to && booking.status !== 'pending')
         .map(booking => ({
           id: booking.id,
           barberId: booking.barberId,

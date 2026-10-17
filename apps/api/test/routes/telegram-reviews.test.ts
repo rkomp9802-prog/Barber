@@ -2,7 +2,7 @@ import { TELEGRAM_INIT_DATA_HEADER, type BookingDto, type PublicReviewDto } from
 import { afterEach, describe, expect, it } from 'vitest'
 import { MONDAY, NOW, tashkent } from '../fixtures/calendar'
 import { makeInitData } from '../fixtures/telegram'
-import { setBookingStatus } from '../fakes/memory-repositories'
+import { addVerifiedTelegramClient, setBookingStatus } from '../fakes/memory-repositories'
 import { IDS, createTestApp, type TestApp } from '../fakes/seed-state'
 
 let t: TestApp | undefined
@@ -18,8 +18,10 @@ const nowSec = Math.floor(NOW / 1000)
 const tgUser = JSON.stringify({ id: 4242, first_name: 'Азиз' })
 const validInitData = (): string => makeInitData({ auth_date: String(nowSec - 30), user: tgUser })
 
+/** Клиент Mini App 4242 уже поделился номером (+998901112233) в Telegram. */
 async function setup(): Promise<TestApp> {
   t = await createTestApp({ now: NOW })
+  addVerifiedTelegramClient(t.state, 4242n, 'Азиз', client.phone)
   return t
 }
 
@@ -40,6 +42,36 @@ describe('Telegram Mini App', () => {
     expect(res.json<BookingDto>()).toMatchObject({ source: 'telegram', client })
     expect(app.state.clients).toHaveLength(1)
     expect(app.state.clients[0]?.telegramId).toBe(4242n)
+  })
+
+  it('Mini App без подтверждённого номера → 403 PHONE_NOT_VERIFIED, запись не создаётся', async () => {
+    t = await createTestApp({ now: NOW })
+    const res = await book(t, at('10:00'), { [TELEGRAM_INIT_DATA_HEADER]: validInitData() })
+    expect(res.statusCode).toBe(403)
+    expect(res.json()).toMatchObject({ code: 'PHONE_NOT_VERIFIED' })
+    expect(t.state.bookings).toHaveLength(0)
+  })
+
+  it('Mini App: запись сразу подтверждена и с номером из Telegram, а не из формы', async () => {
+    const app = await setup()
+    const res = await app.app.inject({
+      method: 'POST',
+      url: '/api/v1/bookings',
+      payload: { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt: at('10:00'), client: { name: 'Азиз', phone: '+998909999999' } },
+      headers: { [TELEGRAM_INIT_DATA_HEADER]: validInitData() },
+    })
+    expect(res.statusCode).toBe(201)
+    expect(res.json<BookingDto>()).toMatchObject({ status: 'confirmed', holdExpiresAt: null, client: { phone: client.phone } })
+  })
+
+  it('GET /me: подтверждён ли номер', async () => {
+    const app = await setup()
+    const me = await app.app.inject({ method: 'GET', url: '/api/v1/me', headers: { [TELEGRAM_INIT_DATA_HEADER]: validInitData() } })
+    expect(me.json()).toEqual({ name: 'Азиз', phone: client.phone, phoneVerified: true })
+    const fresh = makeInitData({ auth_date: String(nowSec - 30), user: JSON.stringify({ id: 777, first_name: 'Новый' }) })
+    const other = await app.app.inject({ method: 'GET', url: '/api/v1/me', headers: { [TELEGRAM_INIT_DATA_HEADER]: fresh } })
+    expect(other.json()).toEqual({ name: 'Новый', phone: null, phoneVerified: false })
+    expect((await app.app.inject({ method: 'GET', url: '/api/v1/me' })).statusCode).toBe(401)
   })
 
   it('POST /bookings с поддельным initData → 401', async () => {

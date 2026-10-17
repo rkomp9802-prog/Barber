@@ -1,7 +1,8 @@
 import { Composer, type Context } from 'grammy'
 import { loadRules } from '../../services/context'
 import type { BotDeps, TelegramActor } from '../deps'
-import { mainMenu } from '../keyboards'
+import { contactRequestKeyboard, mainMenu } from '../keyboards'
+import { startConfirmation } from '../confirm-booking'
 import { BOOKING_START_PREFIX, linkBookingToTelegram } from '../link-booking'
 import { BARBER_START_PREFIX, isWellFormedBarberLinkCode } from '../link-codes'
 import { texts } from '../texts'
@@ -43,6 +44,35 @@ async function linkBooking(ctx: Context, deps: BotDeps, actor: TelegramActor, to
   })
 }
 
+/** b_<token>: запись с сайта ждёт подтверждения номера — подтверждаем; иначе обычная привязка Telegram. */
+async function bookingLink(ctx: Context, deps: BotDeps, actor: TelegramActor, token: string): Promise<void> {
+  const result = await startConfirmation(deps, token, actor)
+  const menu = { reply_markup: mainMenu(deps.miniAppUrl) }
+  switch (result.kind) {
+    case 'not_pending':
+      return linkBooking(ctx, deps, actor, token)
+    case 'not_found':
+      await ctx.reply(texts.bookingNotFound, menu)
+      return
+    case 'expired':
+      await ctx.reply(texts.confirmExpired, menu)
+      return
+    case 'too_many':
+      await ctx.reply(texts.confirmTooMany, menu)
+      return
+    case 'confirmed':
+      await ctx.reply(texts.phoneVerified(1, 0, 0), menu)
+      return
+    case 'need_contact': {
+      const rules = await loadRules(deps.ctx)
+      await ctx.reply(texts.confirmAskContact(result.booking, rules.timezone), {
+        ...HTML,
+        reply_markup: contactRequestKeyboard(),
+      })
+    }
+  }
+}
+
 async function linkBarber(ctx: Context, deps: BotDeps, actor: TelegramActor, code: string): Promise<void> {
   const consumed = isWellFormedBarberLinkCode(code)
     ? await deps.repo.consumeBarberLinkCode(code, new Date(deps.ctx.now()), actor.chatId)
@@ -63,7 +93,7 @@ export function startHandlers(deps: BotDeps): Composer<Context> {
     if (!actor) return
     const payload = ctx.match.trim()
     if (payload.startsWith(BOOKING_START_PREFIX)) {
-      return linkBooking(ctx, deps, actor, payload.slice(BOOKING_START_PREFIX.length))
+      return bookingLink(ctx, deps, actor, payload.slice(BOOKING_START_PREFIX.length))
     }
     if (payload.startsWith(BARBER_START_PREFIX)) {
       return linkBarber(ctx, deps, actor, payload.slice(BARBER_START_PREFIX.length))

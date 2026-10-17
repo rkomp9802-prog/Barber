@@ -24,7 +24,7 @@ export async function getAvailability(ctx: ServiceContext, query: AvailabilityQu
   const outOfWindow = query.date < today || query.date > lastBookableDateKey(rules, now)
   const calendars = outOfWindow
     ? []
-    : await loadCalendars(ctx.repos, quoted, dayBoundsUtc(query.date, rules.timezone))
+    : await loadCalendars(ctx.repos, quoted, dayBoundsUtc(query.date, rules.timezone), now)
   return {
     date: query.date,
     durationMin: displayDurationMin(quoted),
@@ -44,7 +44,7 @@ export async function getAvailabilityDays(
   const keys = Array.from({ length: query.days }, (_, i) => addDaysToKey(query.from, i))
   const lastKey = keys.at(-1) ?? query.from
   const range = { start: dayBoundsUtc(query.from, rules.timezone).start, end: dayBoundsUtc(lastKey, rules.timezone).end }
-  const calendars = await loadCalendars(ctx.repos, quoted, range)
+  const calendars = await loadCalendars(ctx.repos, quoted, range, now)
   return {
     days: keys.map(date => ({ date, hasSlots: buildDaySlots(calendars, date, rules, now).length > 0 })),
   }

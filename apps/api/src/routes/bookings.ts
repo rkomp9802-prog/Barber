@@ -1,4 +1,4 @@
-import { createBookingSchema, rescheduleBookingSchema, type BookingDto } from '@barber/shared'
+import { createBookingSchema, rescheduleBookingSchema, type BookingDto, type MeDto } from '@barber/shared'
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { requireTelegramClient, resolveTelegramClient } from '../auth/telegram-client'
@@ -51,5 +51,12 @@ export async function bookingRoutes(app: FastifyInstance, deps: RouteDeps): Prom
   app.get('/me/bookings', async (request): Promise<BookingDto[]> => {
     const client = await requireTelegramClient(request, telegram, ctx.repos.clients, ctx.now())
     return listClientBookings(ctx, client)
+  })
+
+  /** Профиль клиента Mini App: подтверждён ли номер (кнопка «Поделиться номером»). */
+  app.get('/me', async (request): Promise<MeDto> => {
+    const client = await requireTelegramClient(request, telegram, ctx.repos.clients, ctx.now())
+    const verified = client.phoneVerifiedAt !== null && client.phone !== null
+    return { name: client.name, phone: verified ? client.phone : null, phoneVerified: verified }
   })
 }

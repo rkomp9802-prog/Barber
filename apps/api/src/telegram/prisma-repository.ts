@@ -1,9 +1,15 @@
 import type { Db } from '../db/prisma'
 import { BOOKING_INCLUDE, toRecord } from '../repositories/prisma/bookings'
 import type { BookingRecord } from '../repositories/types'
-import type { ClientTelegramInfo, ConsumedLinkCode, TelegramRepository } from './repository'
+import type { ClientTelegramInfo, ConsumedLinkCode, TelegramRepository, VerifiedPhoneInput } from './repository'
 
-const CLIENT_TELEGRAM_SELECT = { id: true, telegramId: true, telegramChatId: true } as const
+const CLIENT_TELEGRAM_SELECT = {
+  id: true,
+  telegramId: true,
+  telegramChatId: true,
+  phone: true,
+  phoneVerifiedAt: true,
+} as const
 
 /** Реализация TelegramRepository на Prisma (таблицы clients, bookings, barbers, barber_link_codes, reviews). */
 export class PrismaTelegramRepository implements TelegramRepository {
@@ -72,5 +78,52 @@ export class PrismaTelegramRepository implements TelegramRepository {
       data: { comment, isPublic: false },
     })
     return count > 0
+  }
+
+  async verifyPhone(input: VerifiedPhoneInput): Promise<string> {
+    const row = await this.db.client.upsert({
+      where: { telegramId: input.telegramId },
+      create: {
+        telegramId: input.telegramId,
+        telegramChatId: input.chatId,
+        name: input.name,
+        phone: input.phone,
+        phoneVerifiedAt: input.now,
+      },
+      update: { phone: input.phone, phoneVerifiedAt: input.now, telegramChatId: input.chatId },
+      select: { id: true },
+    })
+    return row.id
+  }
+
+  async claimPending(bookingId: string, telegramId: bigint, now: Date): Promise<boolean> {
+    const { count } = await this.db.booking.updateMany({
+      where: { id: bookingId, status: 'pending', holdExpiresAt: { gt: now } },
+      data: { claimTelegramId: telegramId },
+    })
+    return count > 0
+  }
+
+  async listClaimedPending(telegramId: bigint, now: Date): Promise<BookingRecord[]> {
+    const rows = await this.db.booking.findMany({
+      where: { claimTelegramId: telegramId, status: 'pending', holdExpiresAt: { gt: now } },
+      include: BOOKING_INCLUDE,
+      orderBy: { startsAt: 'asc' },
+    })
+    return rows.map(toRecord)
+  }
+
+  async confirmPending(bookingId: string, clientId: string, now: Date): Promise<BookingRecord | null> {
+    return this.db.$transaction(async tx => {
+      const current = await tx.booking.findUnique({ where: { id: bookingId }, select: { client: { select: { name: true } } } })
+      if (!current) return null
+      const { count } = await tx.booking.updateMany({
+        where: { id: bookingId, status: 'pending', holdExpiresAt: { gt: now } },
+        data: { status: 'confirmed', holdExpiresAt: null, claimTelegramId: null, holdIpHash: null, clientId },
+      })
+      if (count === 0) return null
+      await tx.client.update({ where: { id: clientId }, data: { name: current.client.name } })
+      return toRecord(await tx.booking.findUniqueOrThrow({ where: { id: bookingId }, include: BOOKING_INCLUDE }))
+    })
   }
 }

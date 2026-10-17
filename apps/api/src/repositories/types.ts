@@ -42,6 +42,8 @@ export type ClientRecord = {
   readonly name: string
   readonly phone: string | null
   readonly telegramId: bigint | null
+  /** Номер подтверждён через Telegram («Поделиться номером»); null — не подтверждён. */
+  readonly phoneVerifiedAt: Date | null
 }
 
 /** Запись со всем, что нужно для ответа и уведомлений. */
@@ -60,6 +62,8 @@ export type BookingRecord = {
   readonly manageToken: string
   readonly services: readonly BookingServiceDto[]
   readonly createdAt: Date
+  /** Для pending — до какого момента держим слот. */
+  readonly holdExpiresAt: Date | null
 }
 
 /** Кто записывается: гость с сайта или уже известный клиент (Telegram). */
@@ -77,6 +81,8 @@ export type NewBooking = {
   readonly manageToken: string
   readonly client: BookingClientRef
   readonly services: readonly BookingServiceDto[]
+  /** null — запись сразу подтверждена; иначе pending до expiresAt (ipHash — для лимита по адресу). */
+  readonly hold: { readonly expiresAt: Date; readonly ipHash: string } | null
 }
 
 export type NewReview = {
@@ -105,11 +111,15 @@ export interface ScheduleRepository {
   listBreaks(barberIds: readonly string[]): Promise<BarberWeeklyRange[]>
   /** Исключения барберов и закрытия всего салона, пересекающиеся с [from, to). */
   listTimeOff(barberIds: readonly string[], from: Date, to: Date): Promise<TimeOffRecord[]>
-  /** Подтверждённые записи, пересекающиеся с [from, to), кроме excludeBookingId. */
-  listConfirmedBookings(
+  /**
+   * Записи, занимающие время в [from, to): подтверждённые и ещё не истёкшие pending (hold_expires_at > now),
+   * кроме excludeBookingId.
+   */
+  listBusyBookings(
     barberIds: readonly string[],
     from: Date,
     to: Date,
+    now: Date,
     excludeBookingId?: string,
   ): Promise<BusyRecord[]>
 }
@@ -120,11 +130,21 @@ export interface SettingsRepository {
 }
 
 export interface BookingRepository {
-  /** Создаёт клиента (если нужно), запись и снимок услуг в одной транзакции. */
-  create(input: NewBooking): Promise<BookingRecord>
+  /**
+   * Создаёт клиента (если нужно), запись и снимок услуг в одной транзакции. Перед вставкой удаляет
+   * просроченные pending этого барбера, пересекающиеся с новым временем (иначе их держит exclusion constraint).
+   */
+  create(input: NewBooking, now: Date): Promise<BookingRecord>
   findByToken(token: string): Promise<BookingRecord | null>
-  /** Сколько confirmed-записей с началом после now у клиентов с этим телефоном. */
+  /**
+   * Сколько подтверждённых предстоящих записей у клиентов с этим телефоном. Pending не считаем: номер в них
+   * не подтверждён, и посторонний мог бы ими «занять» чужой номер. Поток pending ограничен лимитом по IP.
+   */
   countUpcomingByPhone(phone: string, now: Date): Promise<number>
+  /** Сколько живых pending создано с этого адреса (SHA-256 IP). */
+  countLivePendingByIp(ipHash: string, now: Date): Promise<number>
+  /** Удаляет неподтверждённую запись (клиент передумал). false — она уже не pending. */
+  discardPending(id: string): Promise<boolean>
   listByClient(clientId: string, limit: number): Promise<BookingRecord[]>
   /** Отменяет, только если запись ещё confirmed. null — статус уже изменился. */
   cancel(id: string): Promise<BookingRecord | null>

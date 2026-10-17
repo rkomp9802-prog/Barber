@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { BookingRecord } from '../../src/repositories/types'
 import type { ClientTelegramInfo, ConsumedLinkCode, TelegramRepository } from '../../src/telegram/repository'
 import type { MemoryState } from '../fakes/memory-repositories'
@@ -20,7 +21,7 @@ type StoredBooking = MemoryState['bookings'][number]
 
 /** Запись в виде, которую отдаёт репозиторий (без полей напоминаний). */
 export function toPublicBooking(booking: StoredBooking): BookingRecord {
-  const { reminderDaySentAt: _day, reminder30mSentAt: _short, ...record } = booking
+  const { reminderDaySentAt: _day, reminder30mSentAt: _short, holdIpHash: _ip, claimTelegramId: _claim, ...record } = booking
   return { ...record, client: { ...record.client }, services: record.services.map(s => ({ ...s })) }
 }
 
@@ -35,7 +36,11 @@ export function createFakeTelegramRepo(state: MemoryState, extras: TelegramExtra
     id: client.id,
     telegramId: client.telegramId,
     telegramChatId: extras.clientChats.get(client.id) ?? null,
+    phone: client.phone,
+    phoneVerifiedAt: client.phoneVerifiedAt ?? null,
   })
+  const isLivePending = (booking: StoredBooking, now: Date): boolean =>
+    booking.status === 'pending' && booking.holdExpiresAt !== null && booking.holdExpiresAt > now
   return {
     findClientById: async id => {
       const client = findClient(id)
@@ -80,6 +85,42 @@ export function createFakeTelegramRepo(state: MemoryState, extras: TelegramExtra
       if (!target) return false
       state.reviews = state.reviews.map(r => (r === target ? { ...r, comment, isPublic: false } : r))
       return true
+    },
+    verifyPhone: async input => {
+      const existing = state.clients.find(c => c.telegramId === input.telegramId)
+      const id = existing?.id ?? randomUUID()
+      const verified = { phone: input.phone, phoneVerifiedAt: input.now }
+      state.clients = existing
+        ? state.clients.map(c => (c.id === id ? { ...c, ...verified } : c))
+        : [...state.clients, { id, name: input.name, telegramId: input.telegramId, ...verified }]
+      extras.clientChats.set(id, input.chatId)
+      return id
+    },
+    claimPending: async (bookingId, telegramId, now) => {
+      const booking = state.bookings.find(b => b.id === bookingId)
+      if (!booking || !isLivePending(booking, now)) return false
+      state.bookings = state.bookings.map(b => (b.id === bookingId ? { ...b, claimTelegramId: telegramId } : b))
+      return true
+    },
+    listClaimedPending: async (telegramId, now) =>
+      state.bookings.filter(b => b.claimTelegramId === telegramId && isLivePending(b, now)).map(toPublicBooking),
+    confirmPending: async (bookingId, clientId, now) => {
+      const booking = state.bookings.find(b => b.id === bookingId)
+      const client = findClient(clientId)
+      if (!booking || !client || !isLivePending(booking, now)) return null
+      const name = booking.client.name
+      state.clients = state.clients.map(c => (c.id === clientId ? { ...c, name } : c))
+      const next: StoredBooking = {
+        ...booking,
+        status: 'confirmed',
+        holdExpiresAt: null,
+        claimTelegramId: null,
+        holdIpHash: null,
+        clientId,
+        client: { name, phone: client.phone },
+      }
+      state.bookings = state.bookings.map(b => (b.id === bookingId ? next : b))
+      return toPublicBooking(next)
     },
   }
 }

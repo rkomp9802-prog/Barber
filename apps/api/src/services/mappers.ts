@@ -54,5 +54,6 @@ export function toBookingDto(booking: BookingRecord, options: BookingDtoOptions)
     manageToken: booking.manageToken,
     canChange: canChangeBooking(booking.status, booking.startsAt.getTime(), options.rules, options.now),
     telegramLink: telegramLink(options.botUsername, booking.manageToken),
+    holdExpiresAt: booking.status === 'pending' && booking.holdExpiresAt ? booking.holdExpiresAt.toISOString() : null,
   }
 }

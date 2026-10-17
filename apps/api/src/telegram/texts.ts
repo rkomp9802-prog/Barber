@@ -1,4 +1,4 @@
-import { formatDuration, formatLongDate, formatPrice } from '@barber/shared'
+import { MAX_ACTIVE_BOOKINGS_PER_PHONE, formatDuration, formatLongDate, formatPrice } from '@barber/shared'
 import { dateKeyInZone, timeInZone } from '../domain/time'
 import type { BookingRecord } from '../repositories/types'
 import { bold, escapeHtml } from './html'
@@ -75,6 +75,32 @@ export const texts = {
       'Сюда придут подтверждения и напоминания: за день и за 30 минут до визита.',
     ),
   bookingNotFound: 'Запись не найдена. Проверьте ссылку или запишитесь заново.',
+  confirmAskContact: (booking: BookingRecord, timeZone: string): string =>
+    lines(
+      bold('Подтвердите запись'),
+      '',
+      bookingDetails(booking, timeZone),
+      '',
+      'Нажмите кнопку «📱 Поделиться номером» внизу — так мы убедимся, что номер ваш.',
+      booking.holdExpiresAt
+        ? `Время держим до ${escapeHtml(timeInZone(booking.holdExpiresAt.getTime(), timeZone))}.`
+        : '',
+    ),
+  confirmExpired: 'Время на подтверждение истекло, время освобождено. Запишитесь заново на сайте.',
+  confirmTooMany: `На ваш номер уже ${MAX_ACTIVE_BOOKINGS_PER_PHONE} предстоящие записи. Отмените одну из них, чтобы подтвердить новую.`,
+  contactForeign: 'Нужен ваш собственный номер: нажмите кнопку «📱 Поделиться номером» внизу. Чужой контакт не подходит.',
+  contactNotUz: (siteUrl: string | undefined): string =>
+    `Онлайн-запись доступна только для номеров Узбекистана (+998). Запишитесь по телефону${siteUrl ? ` — он есть на сайте ${siteUrl}` : ' у администратора'}.`,
+  phoneVerified: (confirmed: number, tooMany: number, expired: number): string =>
+    [
+      'Номер подтверждён ✅',
+      confirmed > 0 ? 'Запись подтверждена — детали пришлём следующим сообщением.' : '',
+      confirmed === 0 && tooMany === 0 && expired === 0 ? 'Теперь можно записываться в приложении.' : '',
+      tooMany > 0 ? `Не подтвердили запись: на номер уже ${MAX_ACTIVE_BOOKINGS_PER_PHONE} предстоящие записи.` : '',
+      expired > 0 ? 'Время на подтверждение записи истекло — запишитесь заново.' : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
   bookingLinkConflict:
     'Эта запись уже привязана к другому аккаунту Telegram. Если это ошибка, свяжитесь с администратором.',
   barberLinked: (barberName: string): string =>

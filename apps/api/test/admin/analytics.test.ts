@@ -56,6 +56,7 @@ function booking(
     barberName: BARBER_NAME[barberId] ?? '',
     client: { name: 'Клиент', phone: '+998900000000' },
     status,
+    holdExpiresAt: null,
     source: 'web',
     startsAt,
     endsAt: new Date(startsAt.getTime() + totalDurationMin * 60_000),

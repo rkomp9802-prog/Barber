@@ -49,6 +49,7 @@ export async function loadCalendars(
   repos: Repositories,
   quoted: readonly QuotedBarber[],
   range: Interval,
+  now: number,
   excludeBookingId?: string,
 ): Promise<BarberCalendar[]> {
   if (quoted.length === 0) return []
@@ -59,7 +60,7 @@ export async function loadCalendars(
     repos.schedule.listWorkingHours(ids),
     repos.schedule.listBreaks(ids),
     repos.schedule.listTimeOff(ids, from, to),
-    repos.schedule.listConfirmedBookings(ids, from, to, excludeBookingId),
+    repos.schedule.listBusyBookings(ids, from, to, new Date(now), excludeBookingId),
   ])
   return quoted.map(q => ({
     barberId: q.barberId,

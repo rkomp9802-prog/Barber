@@ -1,4 +1,10 @@
-import { MAX_ACTIVE_BOOKINGS_PER_PHONE, type BookingDto, type CreateBookingInput } from '@barber/shared'
+import { createHash } from 'node:crypto'
+import {
+  BOOKING_HOLD_MIN,
+  MAX_ACTIVE_BOOKINGS_PER_PHONE,
+  type BookingDto,
+  type CreateBookingInput,
+} from '@barber/shared'
 import { changeRejection, rankFreeBarbers } from '../domain/booking-rules'
 import type { BookingRules } from '../domain/settings'
 import { checkStart, type BarberCalendar } from '../domain/slots'
@@ -6,12 +12,21 @@ import { MINUTE_MS, dateKeyInZone, dayBoundsUtc } from '../domain/time'
 import { AppError, isExclusionViolation } from '../errors'
 import { generateManageToken, isWellFormedManageToken } from '../lib/tokens'
 import { safeNotify } from '../notifications/notifier'
-import type { BookingClientRef, BookingRecord, ClientRecord } from '../repositories/types'
+import type { BookingClientRef, BookingRecord, ClientRecord, NewBooking } from '../repositories/types'
 import { loadCalendars, quoteBarbers } from './calendars'
 import { loadRules, type RequestScope, type ServiceContext } from './context'
 import { toBookingDto } from './mappers'
 
 const MY_BOOKINGS_LIMIT = 50
+/** Сколько неподтверждённых записей одновременно можно держать с одного IP. */
+const MAX_PENDING_PER_IP = 3
+
+type Hold = NonNullable<NewBooking['hold']>
+
+/** IP храним только хешем: он нужен для лимита, а не для того, чтобы знать адрес клиента. */
+function hashIp(ip: string | undefined): string {
+  return createHash('sha256').update(`barber-hold:${ip ?? 'unknown'}`).digest('hex')
+}
 
 function parseStart(iso: string): number {
   const start = Date.parse(iso)
@@ -29,20 +44,26 @@ async function insertWithFallback(
   candidates: readonly BarberCalendar[],
   start: number,
   client: BookingClientRef,
+  hold: Hold | null,
+  now: number,
 ): Promise<BookingRecord> {
   for (const candidate of candidates) {
     try {
-      return await ctx.repos.bookings.create({
-        barberId: candidate.barberId,
-        startsAt: new Date(start),
-        endsAt: new Date(start + candidate.quote.totalDurationMin * MINUTE_MS),
-        totalPrice: candidate.quote.totalPrice,
-        totalDurationMin: candidate.quote.totalDurationMin,
-        source: client.kind === 'existing' ? 'telegram' : 'web',
-        manageToken: generateManageToken(),
-        client,
-        services: candidate.quote.items,
-      })
+      return await ctx.repos.bookings.create(
+        {
+          barberId: candidate.barberId,
+          startsAt: new Date(start),
+          endsAt: new Date(start + candidate.quote.totalDurationMin * MINUTE_MS),
+          totalPrice: candidate.quote.totalPrice,
+          totalDurationMin: candidate.quote.totalDurationMin,
+          source: client.kind === 'existing' ? 'telegram' : 'web',
+          manageToken: generateManageToken(),
+          client,
+          services: candidate.quote.items,
+          hold,
+        },
+        new Date(now),
+      )
     } catch (error: unknown) {
       if (!isExclusionViolation(error)) throw error
     }
@@ -63,18 +84,53 @@ export async function createBooking(
   const quoted = await quoteBarbers(ctx.repos, input.serviceIds, input.barberId)
   if (quoted.length === 0) throw new AppError('SERVICE_UNAVAILABLE', 'Нет барберов, которые делают эти услуги')
   const day = dayBoundsUtc(dateKeyInZone(start, rules.timezone), rules.timezone)
-  const calendars = await loadCalendars(ctx.repos, quoted, day)
+  const calendars = await loadCalendars(ctx.repos, quoted, day, now)
   const choice = rankFreeBarbers(calendars, start, rules, now)
   if (!choice.ok) throw new AppError(choice.reason)
-  // Лимит предстоящих записей на номер — в базе, общий для всех инстансов API.
-  const upcoming = await ctx.repos.bookings.countUpcomingByPhone(input.client.phone, new Date(now))
-  if (upcoming >= MAX_ACTIVE_BOOKINGS_PER_PHONE) throw new AppError('TOO_MANY_BOOKINGS')
-  const client: BookingClientRef = telegramClient
-    ? { kind: 'existing', clientId: telegramClient.id, name: input.client.name, phone: input.client.phone }
-    : { kind: 'guest', name: input.client.name, phone: input.client.phone }
-  const booking = await insertWithFallback(ctx, choice.candidates, start, client)
-  await safeNotify(scope.log, 'bookingCreated', booking.id, () => ctx.notifier.bookingCreated(booking))
+  const client = bookingClient(input, telegramClient)
+  const hold = guestHold(ctx, scope, telegramClient, now)
+  await assertWithinLimits(ctx, client.phone, hold, now)
+  const booking = await insertWithFallback(ctx, choice.candidates, start, client, hold, now)
+  // Запись с сайта уведомляет барбера только после подтверждения номера в Telegram (это делает бот).
+  if (booking.status === 'confirmed') {
+    await safeNotify(scope.log, 'bookingCreated', booking.id, () => ctx.notifier.bookingCreated(booking))
+  }
   return dto(ctx, rules, booking)
+}
+
+/**
+ * Клиент Mini App записывается только с номером, который подтвердил в Telegram: номер из формы не используется.
+ * Гость сайта — с введённым номером, но такую запись нужно подтвердить через бота.
+ */
+function bookingClient(input: CreateBookingInput, telegramClient: ClientRecord | null): BookingClientRef {
+  if (!telegramClient) return { kind: 'guest', name: input.client.name, phone: input.client.phone }
+  if (!telegramClient.phoneVerifiedAt || !telegramClient.phone) throw new AppError('PHONE_NOT_VERIFIED')
+  return { kind: 'existing', clientId: telegramClient.id, name: input.client.name, phone: telegramClient.phone }
+}
+
+/** Гость сайта при настроенном боте — pending на BOOKING_HOLD_MIN минут. Без бота подтвердить нечем (dev). */
+function guestHold(
+  ctx: ServiceContext,
+  scope: RequestScope,
+  telegramClient: ClientRecord | null,
+  now: number,
+): Hold | null {
+  if (telegramClient || !ctx.telegramBotUsername) return null
+  return { expiresAt: new Date(now + BOOKING_HOLD_MIN * MINUTE_MS), ipHash: hashIp(scope.ip) }
+}
+
+/** Лимиты — в базе, общие для всех инстансов API: предстоящие записи на номер и неподтверждённые с одного IP. */
+async function assertWithinLimits(ctx: ServiceContext, phone: string, hold: Hold | null, now: number): Promise<void> {
+  const at = new Date(now)
+  if ((await ctx.repos.bookings.countUpcomingByPhone(phone, at)) >= MAX_ACTIVE_BOOKINGS_PER_PHONE) {
+    throw new AppError('TOO_MANY_BOOKINGS')
+  }
+  if (hold && (await ctx.repos.bookings.countLivePendingByIp(hold.ipHash, at)) >= MAX_PENDING_PER_IP) {
+    throw new AppError(
+      'RATE_LIMITED',
+      `Слишком много неподтверждённых записей. Подтвердите их в Telegram или подождите ${BOOKING_HOLD_MIN} минут`,
+    )
+  }
 }
 
 async function findBookingOrThrow(ctx: ServiceContext, token: string): Promise<BookingRecord> {
@@ -83,9 +139,22 @@ async function findBookingOrThrow(ctx: ServiceContext, token: string): Promise<B
   return booking
 }
 
+/** Неподтверждённая запись, срок которой прошёл, для клиента уже не существует: слот свободен. */
+function isExpiredHold(booking: BookingRecord, now: number): boolean {
+  return booking.status === 'pending' && (booking.holdExpiresAt === null || booking.holdExpiresAt.getTime() <= now)
+}
+
+async function findLiveBookingOrThrow(ctx: ServiceContext, token: string): Promise<BookingRecord> {
+  const booking = await findBookingOrThrow(ctx, token)
+  if (isExpiredHold(booking, ctx.now())) {
+    throw new AppError('NOT_FOUND', 'Время на подтверждение истекло. Запишитесь заново')
+  }
+  return booking
+}
+
 /** GET /bookings/:token */
 export async function getBookingByToken(ctx: ServiceContext, token: string): Promise<BookingDto> {
-  const [booking, rules] = await Promise.all([findBookingOrThrow(ctx, token), loadRules(ctx)])
+  const [booking, rules] = await Promise.all([findLiveBookingOrThrow(ctx, token), loadRules(ctx)])
   return dto(ctx, rules, booking)
 }
 
@@ -96,7 +165,12 @@ function assertChangeable(booking: BookingRecord, rules: BookingRules, now: numb
 
 /** POST /bookings/:token/cancel */
 export async function cancelBooking(ctx: ServiceContext, scope: RequestScope, token: string): Promise<BookingDto> {
-  const [booking, rules] = await Promise.all([findBookingOrThrow(ctx, token), loadRules(ctx)])
+  const [booking, rules] = await Promise.all([findLiveBookingOrThrow(ctx, token), loadRules(ctx)])
+  // Неподтверждённая запись: клиент передумал — освобождаем слот. Барбер о ней и не знал.
+  if (booking.status === 'pending') {
+    if (!(await ctx.repos.bookings.discardPending(booking.id))) throw new AppError('BOOKING_NOT_ACTIVE')
+    return dto(ctx, rules, { ...booking, status: 'cancelled', holdExpiresAt: null })
+  }
   assertChangeable(booking, rules, ctx.now())
   const cancelled = await ctx.repos.bookings.cancel(booking.id)
   if (!cancelled) throw new AppError('BOOKING_NOT_ACTIVE')
@@ -113,7 +187,7 @@ export async function rescheduleBooking(
 ): Promise<BookingDto> {
   const start = parseStart(startsAtIso)
   const now = ctx.now()
-  const [booking, rules] = await Promise.all([findBookingOrThrow(ctx, token), loadRules(ctx)])
+  const [booking, rules] = await Promise.all([findLiveBookingOrThrow(ctx, token), loadRules(ctx)])
   assertChangeable(booking, rules, now)
   const quote = {
     barberId: booking.barberId,
@@ -122,7 +196,7 @@ export async function rescheduleBooking(
     items: booking.services,
   }
   const day = dayBoundsUtc(dateKeyInZone(start, rules.timezone), rules.timezone)
-  const [calendar] = await loadCalendars(ctx.repos, [{ barberId: booking.barberId, sortOrder: 0, quote }], day, booking.id)
+  const [calendar] = await loadCalendars(ctx.repos, [{ barberId: booking.barberId, sortOrder: 0, quote }], day, now, booking.id)
   const rejection = calendar ? checkStart(calendar, start, rules, now) : 'OUTSIDE_WORKING_HOURS'
   if (rejection) throw new AppError(rejection)
   const endsAt = new Date(start + booking.totalDurationMin * MINUTE_MS)

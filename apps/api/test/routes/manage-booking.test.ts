@@ -1,7 +1,7 @@
 import type { BookingDto } from '@barber/shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MONDAY, NOW, tashkent } from '../fixtures/calendar'
-import { setBookingStatus } from '../fakes/memory-repositories'
+import { confirmBooking, setBookingStatus } from '../fakes/memory-repositories'
 import { IDS, createTestApp, type TestApp } from '../fakes/seed-state'
 
 let t: TestApp | undefined
@@ -28,7 +28,10 @@ async function withBooking(startsAt = at('12:00')) {
     payload: { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt, client },
   })
   expect(created.statusCode).toBe(201)
-  return { app, booking: created.json<BookingDto>(), notifier }
+  const booking = created.json<BookingDto>()
+  // Запись с сайта ждёт подтверждения в Telegram; отмена и перенос — для подтверждённой.
+  confirmBooking(app.state, booking.id)
+  return { app, booking, notifier }
 }
 
 /** Пересоздаёт приложение над тем же состоянием с другим «сейчас». */

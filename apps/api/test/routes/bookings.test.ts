@@ -2,7 +2,7 @@ import type { BookingDto } from '@barber/shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Notifier } from '../../src/notifications/notifier'
 import { MONDAY, NOW, tashkent } from '../fixtures/calendar'
-import { setBookingStatus } from '../fakes/memory-repositories'
+import { confirmBooking, setBookingStatus } from '../fakes/memory-repositories'
 import { IDS, createTestApp, type TestApp } from '../fakes/seed-state'
 
 let t: TestApp | undefined
@@ -40,7 +40,8 @@ describe('POST /bookings', () => {
     expect(res.statusCode).toBe(201)
     const body = res.json<BookingDto>()
     expect(body).toMatchObject({
-      status: 'confirmed',
+      status: 'pending',
+      holdExpiresAt: new Date(NOW + 10 * 60_000).toISOString(),
       source: 'web',
       startsAt: '2026-10-12T05:00:00.000Z',
       endsAt: '2026-10-12T06:30:00.000Z',
@@ -48,12 +49,73 @@ describe('POST /bookings', () => {
       totalDurationMin: 90,
       barber: { id: IDS.timur, name: 'Тимур' },
       client,
-      canChange: true,
+      canChange: false,
     })
     expect(body.manageToken).toMatch(/^[A-Za-z0-9_-]{43}$/)
     expect(body.telegramLink).toBe(`https://t.me/sharp_test_bot?start=b_${body.manageToken}`)
     expect(body.services.map(s => s.price)).toEqual([150_000, 70_000])
+    // Барбер узнает о записи только после подтверждения номера в Telegram.
+    expect(notifier.bookingCreated).not.toHaveBeenCalled()
+  })
+
+  it('без бота подтвердить нечем: запись сразу confirmed и уведомление уходит', async () => {
+    const notifier = mockNotifier()
+    const app = await setup({ now: NOW, notifier, config: { telegram: { botToken: undefined, botUsername: undefined, initDataMaxAgeSec: 86_400 } } })
+    const res = await create(app, { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt: at('10:00'), client })
+    expect(res.json<BookingDto>()).toMatchObject({ status: 'confirmed', holdExpiresAt: null, canChange: true })
     expect(notifier.bookingCreated).toHaveBeenCalledOnce()
+  })
+
+  it('неподтверждённая запись держит слот 10 минут, потом слот свободен', async () => {
+    const app = await setup()
+    const body = { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt: at('10:00') }
+    expect((await create(app, { ...body, client })).statusCode).toBe(201)
+    const second = await create(app, { ...body, client: { name: 'Пётр', phone: '+998907777777' } })
+    expect(second.statusCode).toBe(409)
+    await app.app.close()
+    t = await createTestApp({ now: NOW + 10 * 60_000 + 1, state: app.state })
+    const later = await create(t, { ...body, client: { name: 'Пётр', phone: '+998907777777' } })
+    expect(later.statusCode).toBe(201)
+    // Просроченная запись удалена, на это время одна живая.
+    expect(t.state.bookings.filter(b => b.startsAt.toISOString() === body.startsAt)).toHaveLength(1)
+  })
+
+  it('просроченная неподтверждённая запись по токену → 404', async () => {
+    const app = await setup()
+    const token = (await create(app, { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt: at('10:00'), client })).json<BookingDto>().manageToken
+    await app.app.close()
+    t = await createTestApp({ now: NOW + 10 * 60_000, state: app.state })
+    const res = await t.app.inject({ method: 'GET', url: `/api/v1/bookings/${token}` })
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('отказ от неподтверждённой записи удаляет её и освобождает слот', async () => {
+    const app = await setup()
+    const body = { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt: at('10:00'), client }
+    const token = (await create(app, body)).json<BookingDto>().manageToken
+    const cancelled = await app.app.inject({ method: 'POST', url: `/api/v1/bookings/${token}/cancel` })
+    expect(cancelled.json<BookingDto>().status).toBe('cancelled')
+    expect(app.state.bookings).toHaveLength(0)
+    expect((await create(app, body)).statusCode).toBe(201)
+  })
+
+  it('неподтверждённую запись нельзя перенести', async () => {
+    const app = await setup()
+    const token = (await create(app, { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt: at('10:00'), client })).json<BookingDto>().manageToken
+    const res = await app.app.inject({ method: 'POST', url: `/api/v1/bookings/${token}/reschedule`, payload: { startsAt: at('12:00') } })
+    expect(res.json()).toMatchObject({ code: 'BOOKING_NOT_ACTIVE' })
+  })
+
+  it('не больше 3 неподтверждённых записей с одного IP', async () => {
+    const app = await setup()
+    const phones = ['+998901000001', '+998901000002', '+998901000003', '+998901000004']
+    const times = ['10:00', '11:00', '12:00', '13:00']
+    const results = []
+    for (const [i, phone] of phones.entries()) {
+      const res = await create(app, { serviceIds: [IDS.haircut], barberId: IDS.aziz, startsAt: at(times[i]!), client: { name: 'Гость', phone } })
+      results.push(res.statusCode)
+    }
+    expect(results).toEqual([201, 201, 201, 429])
   })
 
   it('лишние поля от фронтенда (цена) игнорируются', async () => {
@@ -88,9 +150,14 @@ describe('POST /bookings', () => {
     const clientOf = (token: string) => app.state.bookings.find(b => b.manageToken === token)?.clientId
     expect(clientOf(attacker.json<BookingDto>().manageToken)).not.toBe(clientOf(victim.json<BookingDto>().manageToken))
   })
-  it('не больше 3 предстоящих записей на номер; после отмены можно снова', async () => {
+  it('не больше 3 подтверждённых предстоящих записей на номер; после отмены можно снова', async () => {
     const app = await setup()
-    const book = (barberId: string, time: string) => create(app, { serviceIds: [IDS.haircut], barberId, startsAt: at(time), client })
+    // Записи с сайта подтверждаются в боте; считаются только подтверждённые.
+    const book = async (barberId: string, time: string) => {
+      const res = await create(app, { serviceIds: [IDS.haircut], barberId, startsAt: at(time), client })
+      if (res.statusCode === 201) confirmBooking(app.state, res.json<BookingDto>().id)
+      return res
+    }
     const first = await book(IDS.aziz, '10:00')
     expect((await book(IDS.aziz, '11:00')).statusCode).toBe(201)
     expect((await book(IDS.aziz, '12:00')).statusCode).toBe(201)
@@ -168,7 +235,7 @@ describe('POST /bookings', () => {
   it('ошибка уведомления не ломает создание записи', async () => {
     const notifier = mockNotifier()
     notifier.bookingCreated.mockRejectedValueOnce(new Error('telegram down'))
-    const app = await setup({ now: NOW, notifier })
+    const app = await setup({ now: NOW, notifier, config: { telegram: { botToken: undefined, botUsername: undefined, initDataMaxAgeSec: 86_400 } } })
     const res = await create(app, { serviceIds: [IDS.haircut], barberId: IDS.timur, startsAt: at('10:00'), client })
     expect(res.statusCode).toBe(201)
   })

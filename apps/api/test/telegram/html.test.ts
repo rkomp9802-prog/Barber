@@ -22,6 +22,7 @@ function booking(overrides: Partial<BookingRecord> = {}): BookingRecord {
     manageToken: 'a'.repeat(43),
     services: [{ serviceId: 'svc-1', name: HOSTILE, durationMin: 60, price: 120_000 }],
     createdAt: new Date(0),
+    holdExpiresAt: null,
     ...overrides,
   }
 }
