@@ -28,6 +28,7 @@ function fakeRepo(due: Readonly<Record<ReminderKind, readonly ClaimedBooking[]>>
   const repo: NotificationsRepo = {
     loadSettings: async () => [{ key: 'reminder_short_minutes', value: 30 }],
     autoComplete: async () => 2,
+    expireHolds: async () => 1,
     claim: async (kind, _settings, limit) => {
       const fresh = due[kind].filter((b) => !marked[kind].has(b.id)).slice(0, limit)
       fresh.forEach((b) => marked[kind].add(b.id))
@@ -64,6 +65,7 @@ describe('runAllJobs', () => {
     const second = await runAllJobs(deps(repo, () => OK, sent))
 
     expect(first.autoCompleted).toBe(2)
+    expect(first.expiredHolds).toBe(1)
     expect([first.day.sent, first.short.sent, first.review.sent]).toEqual([1, 1, 1])
     expect([second.day.claimed, second.short.claimed, second.review.claimed]).toEqual([0, 0, 0])
     expect(sent).toHaveLength(3)

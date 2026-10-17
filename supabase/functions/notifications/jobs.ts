@@ -47,6 +47,11 @@ export interface NotificationsRepo {
   loadSettings(): Promise<readonly SettingRow[]>
   /** confirmed + ends_at < now() → completed. Возвращает число завершённых записей. */
   autoComplete(limit: number): Promise<number>
+  /**
+   * Неподтверждённые записи с сайта (pending), срок которых прошёл, удаляются вместе с их гостевыми
+   * клиентами, если у тех не осталось записей. Возвращает число удалённых записей.
+   */
+  expireHolds(limit: number): Promise<number>
   claim(kind: ReminderKind, settings: NotificationSettings, limit: number): Promise<readonly ClaimedBooking[]>
   /** Снять отметку, чтобы следующий запуск попробовал снова. */
   release(kind: ReminderKind, bookingId: string): Promise<void>
@@ -61,6 +66,7 @@ export interface JobDeps {
 }
 
 export interface RunSummary {
+  readonly expiredHolds: number
   readonly autoCompleted: number
   readonly day: JobStats
   readonly short: JobStats
@@ -153,6 +159,7 @@ async function guarded<T>(name: string, fallback: T, task: () => Promise<T>, dep
 
 export async function runAllJobs(deps: JobDeps): Promise<RunSummary> {
   const settings = parseSettings(await deps.repo.loadSettings())
+  const [expiredHolds, okExpire] = await guarded('expireHolds', 0, () => deps.repo.expireHolds(deps.batchSize), deps)
   // Сначала автозавершение: так запрос отзыва увидит только что завершённые визиты (с учётом задержки).
   const [autoCompleted, okComplete] = await guarded('autoComplete', 0, () => deps.repo.autoComplete(deps.batchSize), deps)
   const [day, okDay] = await guarded('day', EMPTY_STATS, () => runReminderJob('day', settings, deps), deps)
@@ -160,11 +167,12 @@ export async function runAllJobs(deps: JobDeps): Promise<RunSummary> {
   const [review, okReview] = await guarded('review', EMPTY_STATS, () => runReminderJob('review', settings, deps), deps)
 
   const statuses: readonly [string, boolean][] = [
+    ['expireHolds', okExpire],
     ['autoComplete', okComplete],
     ['day', okDay],
     ['short', okShort],
     ['review', okReview],
   ]
   const failedJobs = statuses.filter(([, ok]) => !ok).map(([name]) => name)
-  return { autoCompleted, day, short, review, failedJobs }
+  return { expiredHolds, autoCompleted, day, short, review, failedJobs }
 }

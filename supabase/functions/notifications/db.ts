@@ -109,6 +109,30 @@ async function autoComplete(sql: Sql, limit: number): Promise<number> {
   return rows.length
 }
 
+async function expireHolds(sql: Sql, limit: number): Promise<number> {
+  return sql.begin(async (tx) => {
+    const removed = await tx<{ client_id: string }[]>`
+      DELETE FROM bookings
+      WHERE id IN (
+        SELECT id FROM bookings
+        WHERE status = 'pending' AND hold_expires_at <= now()
+        ORDER BY hold_expires_at
+        LIMIT ${limit}
+        FOR UPDATE SKIP LOCKED
+      )
+      RETURNING client_id::text AS client_id`
+    if (removed.length === 0) return 0
+    // Гость с сайта — отдельный клиент на каждую запись: без записей и Telegram он больше не нужен.
+    const ids = [...new Set(removed.map((row) => row.client_id))]
+    await tx`
+      DELETE FROM clients c
+      WHERE c.id::text IN ${tx(ids)} AND c.telegram_id IS NULL
+        AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.client_id = c.id)
+        AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.client_id = c.id)`
+    return removed.length
+  })
+}
+
 export function createRepo(sql: Sql): NotificationsRepo {
   return {
     loadSettings: async () => {
@@ -118,6 +142,7 @@ export function createRepo(sql: Sql): NotificationsRepo {
       return rows.map((row): SettingRow => ({ key: row.key, value: row.value }))
     },
     autoComplete: (limit) => autoComplete(sql, limit),
+    expireHolds: (limit) => expireHolds(sql, limit),
     claim: (kind, settings, limit) => claim(sql, kind, settings, limit),
     release: async (kind, bookingId) => {
       // Отметку ставил только наш запуск (другие видят NOT NULL и строку не трогают), поэтому снимаем по id.
