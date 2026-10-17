@@ -34,6 +34,9 @@ export function ConfirmStep({ summary, barber, name, phone, error }: Props) {
         </dl>
       </div>
       <p className="muted">Оплата в барбершопе после визита — наличными или картой.</p>
+      <p className="muted">
+        После записи подтвердите её в Telegram: бот попросит поделиться номером. Нет Telegram — позвоните нам.
+      </p>
       {error && (
         <p className={styles.formError} role="alert">
           {error}

@@ -182,3 +182,14 @@
   display: grid;
   gap: 18px;
 }
+
+/* ---------- Подтверждение записи в Telegram ---------- */
+.countdown {
+  margin: 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown strong {
+  font-size: 20px;
+}

@@ -7,6 +7,7 @@ import {
   type BarberDto,
   type BookingDto,
   type CreateBookingInput,
+  type MeDto,
   type ServiceDto,
   TELEGRAM_INIT_DATA_HEADER,
 } from '@barber/shared'
@@ -108,6 +109,8 @@ export type ApiClient = {
   getAvailabilityDays: (params: AvailabilityDaysParams, signal?: AbortSignal) => Promise<AvailabilityDaysResponse>
   createBooking: (input: CreateBookingInput, signal?: AbortSignal) => Promise<BookingDto>
   getMyBookings: (signal?: AbortSignal) => Promise<BookingDto[]>
+  /** Профиль: подтверждён ли номер через Telegram. */
+  getMe: (signal?: AbortSignal) => Promise<MeDto>
   cancelBooking: (manageToken: string, signal?: AbortSignal) => Promise<BookingDto>
   rescheduleBooking: (manageToken: string, startsAt: string, signal?: AbortSignal) => Promise<BookingDto>
 }
@@ -148,6 +151,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       ),
     createBooking: (input, signal) => request('/bookings', { method: 'POST', body: input, signal }),
     getMyBookings: signal => request('/me/bookings', { signal }),
+    getMe: signal => request('/me', { signal }),
     cancelBooking: (manageToken, signal) =>
       request(`/bookings/${token(manageToken)}/cancel`, { method: 'POST', body: {}, signal }),
     rescheduleBooking: (manageToken, startsAt, signal) =>

@@ -59,6 +59,7 @@ function bookingFixture(): BookingDto {
     manageToken: 't1',
     canChange: true,
     telegramLink: null,
+    holdExpiresAt: null,
   }
 }
 

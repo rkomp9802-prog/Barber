@@ -10,9 +10,10 @@ import { shop } from '@/data/shop'
 
 import { BookingDetails } from './BookingDetails'
 import { CancelPanel } from './CancelPanel'
+import { PendingConfirmation } from './PendingConfirmation'
 import { ReschedulePanel } from './ReschedulePanel'
 import styles from './Manage.module.css'
-import { canShowActions, isActiveBooking, needsPhoneCall } from './manageRules'
+import { canShowActions, isActiveBooking, isPendingBooking, needsPhoneCall } from './manageRules'
 
 type Panel = 'none' | 'cancel' | 'reschedule'
 
@@ -74,6 +75,15 @@ export function ManageBooking({ initialBooking, todayKey }: Props) {
   function handleChanged(updated: BookingDto) {
     setBooking(updated)
     setPanel('none')
+  }
+
+  if (isPendingBooking(booking)) {
+    return (
+      <div className={styles.stack}>
+        <BookingDetails booking={booking} />
+        <PendingConfirmation booking={booking} onConfirmed={setBooking} />
+      </div>
+    )
   }
 
   return (

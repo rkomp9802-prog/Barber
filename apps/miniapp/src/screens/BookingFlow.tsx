@@ -1,6 +1,7 @@
 import {
   type BarberDto,
   formatDuration,
+  formatUzPhone,
   formatPrice,
   plural,
   type ServiceDto,
@@ -8,7 +9,7 @@ import {
   totalDurationMin,
   totalPrice,
 } from '@barber/shared'
-import { useReducer, useState } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 
 import { api } from '../client'
 import { BarberStep } from '../components/BarberStep'
@@ -33,6 +34,7 @@ import {
   stepNumber,
 } from '../flow'
 import type { RequestResult } from '../hooks/useRequest'
+import { type PhoneState, useVerifiedPhone } from '../hooks/useVerifiedPhone'
 import type { MainAction } from '../hooks/useMainButton'
 import { getTelegramFirstName, hapticNotify, hapticSelection } from '../telegram'
 
@@ -63,9 +65,11 @@ type StepBodyProps = {
   dispatch: (action: FlowAction) => void
   submitError: string | null
   onMyBookings: () => void
+  phoneState: PhoneState
+  onRequestPhone: () => void
 }
 
-function StepBody({ state, catalog, dispatch, submitError, onMyBookings }: StepBodyProps) {
+function StepBody({ state, catalog, dispatch, submitError, onMyBookings, phoneState, onRequestPhone }: StepBodyProps) {
   const { draft } = state
   const select = (action: FlowAction): void => {
     hapticSelection()
@@ -82,7 +86,7 @@ function StepBody({ state, catalog, dispatch, submitError, onMyBookings }: StepB
     case 'time':
       return draft.barberId && draft.date && <TimePicker serviceIds={draft.serviceIds} barberId={draft.barberId} date={draft.date} selected={draft.slot} version={state.slotsVersion} onSelect={slot => select({ type: 'selectSlot', slot })} />
     case 'contacts':
-      return <ContactsStep name={draft.name} phone={draft.phone} onNameChange={name => dispatch({ type: 'setName', name })} onPhoneChange={phone => dispatch({ type: 'setPhone', phone })} />
+      return <ContactsStep name={draft.name} phone={draft.phone} phoneState={phoneState} onNameChange={name => dispatch({ type: 'setName', name })} onPhoneChange={phone => dispatch({ type: 'setPhone', phone })} onRequestPhone={onRequestPhone} />
     case 'confirm':
       return draft.barberId && draft.date && draft.slot && <ConfirmStep services={chosen} barbers={catalog.barbers} barberId={draft.barberId} date={draft.date} slot={draft.slot} name={draft.name} phone={draft.phone} error={submitError} />
     case 'success':
@@ -134,6 +138,13 @@ function useSubmit(state: FlowState, dispatch: (action: FlowAction) => void) {
 export function BookingFlow({ catalog, onExit, onMyBookings }: Props) {
   const [state, dispatch] = useReducer(flowReducer, getTelegramFirstName(), createInitialFlow)
   const { submit, submitting, submitError, clearError } = useSubmit(state, dispatch)
+  const phone = useVerifiedPhone()
+  const verifiedPhone = phone.state.status === 'verified' ? formatUzPhone(phone.state.phone) : null
+
+  // Подтверждённый номер подставляем в форму: в запись сервер всё равно возьмёт его.
+  useEffect(() => {
+    if (verifiedPhone && state.draft.phone !== verifiedPhone) dispatch({ type: 'setPhone', phone: verifiedPhone })
+  }, [verifiedPhone, state.draft.phone])
   const { step } = state
   const ready = catalog.status === 'success'
   const chosen = ready ? catalog.data.services.filter(s => state.draft.serviceIds.includes(s.id)) : []
@@ -166,7 +177,15 @@ export function BookingFlow({ catalog, onExit, onMyBookings }: Props) {
       {catalog.status === 'loading' && <Skeleton rows={5} label="Загружаем услуги…" />}
       {catalog.status === 'error' && <ErrorState error={catalog.error} onRetry={catalog.reload} />}
       {ready && (
-        <StepBody state={state} catalog={catalog.data} dispatch={dispatch} submitError={submitError} onMyBookings={onMyBookings} />
+        <StepBody
+          state={state}
+          catalog={catalog.data}
+          dispatch={dispatch}
+          submitError={submitError}
+          onMyBookings={onMyBookings}
+          phoneState={phone.state}
+          onRequestPhone={() => void phone.request()}
+        />
       )}
     </Screen>
   )

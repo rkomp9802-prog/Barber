@@ -3,6 +3,7 @@ import { type BookingDto, type BookingStatus, TIMEZONE, tashkentDateKey } from '
 export type BadgeTone = 'accent' | 'success' | 'muted' | 'danger'
 
 export const STATUS_LABELS: Readonly<Record<BookingStatus, { label: string; tone: BadgeTone }>> = {
+  pending: { label: 'Ждёт подтверждения', tone: 'muted' },
   confirmed: { label: 'Подтверждена', tone: 'accent' },
   completed: { label: 'Завершена', tone: 'success' },
   cancelled: { label: 'Отменена', tone: 'muted' },

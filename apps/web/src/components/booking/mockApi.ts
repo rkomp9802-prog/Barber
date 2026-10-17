@@ -169,6 +169,7 @@ function toDemoBooking(draft: BookingDraft, barberId: string): BookingDto {
     manageToken: crypto.randomUUID(),
     canChange: false,
     telegramLink: null,
+    holdExpiresAt: null,
   }
 }
 

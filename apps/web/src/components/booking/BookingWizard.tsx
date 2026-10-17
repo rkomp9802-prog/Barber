@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useReducer, useRef, type Dispatch } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState, type Dispatch } from 'react'
 
-import { nextDateKeys } from '@barber/shared'
+import { formatUzPhone, nextDateKeys, type BookingDto } from '@barber/shared'
 
+import { PendingConfirmation } from '@/components/manage/PendingConfirmation'
 import { describeSubmitError } from '@/lib/apiErrors'
 
 import { bookingReducer, createInitialState, isStepValid, toDraft, type BookingAction, type BookingState, type InitialSelection } from './bookingState'
@@ -143,16 +144,47 @@ function WizardView({ state, dispatch, source, mode, todayKey }: ViewProps) {
   )
 }
 
+type BookingResultProps = {
+  initialBooking: BookingDto
+  clientName: string
+  clientPhone: string
+  isDemo: boolean
+  onBookAgain: () => void
+}
+
+/** Запись с сайта сначала ждёт подтверждения в Telegram, затем показываем «вы записаны». */
+function BookingResult({ initialBooking, clientName, clientPhone, isDemo, onBookAgain }: BookingResultProps) {
+  const [booking, setBooking] = useState(initialBooking)
+  if (booking.status === 'pending') {
+    return (
+      <div className={styles.pending}>
+        <SummaryPanel summary={summaryFromBooking(booking)} />
+        <PendingConfirmation booking={booking} onConfirmed={setBooking} />
+      </div>
+    )
+  }
+  return (
+    <SuccessScreen
+      summary={summaryFromBooking(booking)}
+      booking={booking}
+      clientName={clientName}
+      // После подтверждения в Telegram в записи номер из Telegram — показываем его.
+      clientPhone={booking.client.phone ? formatUzPhone(booking.client.phone) : clientPhone}
+      isDemo={isDemo}
+      onBookAgain={onBookAgain}
+    />
+  )
+}
+
 export function BookingWizard({ initialSelection, catalog, mode, todayKey, isDemoError }: Props) {
   const source = useMemo(() => pickSource(mode, isDemoError), [mode, isDemoError])
   const [state, dispatch] = useReducer(bookingReducer, { catalog, selection: initialSelection }, createInitialState)
 
   if (state.submit.kind === 'done') {
-    const { booking } = state.submit
     return (
-      <SuccessScreen
-        summary={summaryFromBooking(booking)}
-        booking={booking}
+      <BookingResult
+        key={state.submit.booking.id}
+        initialBooking={state.submit.booking}
         clientName={state.name.trim()}
         clientPhone={state.phone}
         isDemo={mode === 'demo'}

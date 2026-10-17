@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { BookingDto, BookingStatus } from '@barber/shared'
 
 import {
+  formatCountdown,
+  holdRemainingMs,
   BOOKING_STATUS_LABELS,
   bookingClock,
   bookingCode,
@@ -51,11 +53,21 @@ describe('isActiveBooking', () => {
 describe('status presentation', () => {
   it('has a Russian label for every status', () => {
     expect(BOOKING_STATUS_LABELS).toEqual({
+      pending: 'Ждёт подтверждения в Telegram',
       confirmed: 'Подтверждена',
       completed: 'Завершена',
       cancelled: 'Отменена',
       no_show: 'Клиент не пришёл',
     })
+  })
+
+  it('countdown to the end of the hold', () => {
+    const hold = '2026-10-20T10:10:00.000Z'
+    const at = (iso: string) => Date.parse(iso)
+    expect(formatCountdown(holdRemainingMs(hold, at('2026-10-20T10:00:00.000Z')))).toBe('10:00')
+    expect(formatCountdown(holdRemainingMs(hold, at('2026-10-20T10:09:55.500Z')))).toBe('0:05')
+    expect(holdRemainingMs(hold, at('2026-10-20T10:11:00.000Z'))).toBe(0)
+    expect(holdRemainingMs(null, 0)).toBe(0)
   })
 
   it('maps statuses to tones', () => {

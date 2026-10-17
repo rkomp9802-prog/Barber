@@ -52,6 +52,8 @@ type TelegramWebApp = {
   setHeaderColor?: (color: string) => void
   setBackgroundColor?: (color: string) => void
   showConfirm?: (message: string, callback: (confirmed: boolean) => void) => void
+  /** Bot API 6.9+: нативный запрос номера; номер приходит боту сообщением-контактом. */
+  requestContact?: (callback: (shared: boolean) => void) => void
   onEvent: (event: 'themeChanged', handler: () => void) => void
 }
 
@@ -128,6 +130,21 @@ export function hapticSelection(): void {
 
 export function hapticNotify(type: 'error' | 'success' | 'warning'): void {
   if (supports('6.1')) webApp()?.HapticFeedback?.notificationOccurred(type)
+}
+
+/** Можно ли попросить номер нативной кнопкой Telegram. */
+export function canRequestContact(): boolean {
+  return isInsideTelegram() && supports('6.9') && typeof webApp()?.requestContact === 'function'
+}
+
+/**
+ * «Поделиться номером». true — пользователь согласился: Telegram отправит его контакт боту, бот проверит
+ * (свой контакт, номер +998) и сохранит номер как подтверждённый. Сам номер приложение не получает.
+ */
+export function requestTelegramContact(): Promise<boolean> {
+  const requestContact = webApp()?.requestContact
+  if (!requestContact || !canRequestContact()) return Promise.resolve(false)
+  return new Promise(resolve => requestContact(shared => resolve(shared)))
 }
 
 /** Подтверждение действия: нативный диалог Telegram или window.confirm в браузере. */

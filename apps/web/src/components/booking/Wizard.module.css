@@ -232,3 +232,11 @@
     margin-left: auto;
   }
 }
+
+/* Запись ждёт подтверждения в Telegram: сводка и панель подтверждения. */
+.pending {
+  display: grid;
+  gap: 24px;
+  max-width: 720px;
+  margin: 0 auto;
+}
