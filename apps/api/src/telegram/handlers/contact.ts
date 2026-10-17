@@ -19,7 +19,9 @@ export function contactHandlers(deps: BotDeps): Composer<Context> {
       lastName: ctx.from.last_name,
       username: ctx.from.username,
     })
-    const result = await acceptContact(deps, actor, { userId: contact.user_id, phoneNumber: contact.phone_number }, name)
+    // Пересланное сообщение с контактом — не «Поделиться номером»: не принимаем, даже если контакт свой.
+    const userId = ctx.message.forward_origin ? undefined : contact.user_id
+    const result = await acceptContact(deps, actor, { userId, phoneNumber: contact.phone_number }, name)
     if (result.kind === 'foreign') {
       await ctx.reply(texts.contactForeign, { reply_markup: contactRequestKeyboard() })
       return

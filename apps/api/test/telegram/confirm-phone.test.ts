@@ -80,9 +80,11 @@ describe('подтверждение записи с сайта через Teleg
     await send(startUpdate(`b_${MANAGE_TOKEN}`))
     await send(contactUpdate('998901112233', { userId: 5151 }))
     await send(contactUpdate('998901112233', { userId: null }))
+    // Даже свой контакт, но пересланным сообщением — не «Поделиться номером».
+    await send(contactUpdate('998901112233', { forwarded: true }))
     expect(booking()?.status).toBe('pending')
     expect(tgClient()).toBeUndefined()
-    expect(sentTexts(h.calls).filter(t => t.includes('Чужой контакт не подходит'))).toHaveLength(2)
+    expect(sentTexts(h.calls).filter(t => t.includes('Чужой контакт не подходит'))).toHaveLength(3)
   })
 
   it('номер не Узбекистана → отказ, запись не подтверждена', async () => {

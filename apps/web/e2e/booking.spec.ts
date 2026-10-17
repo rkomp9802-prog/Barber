@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test'
 
-/** Тестовый клиент: запись создаётся на самый конец дня и тут же отменяется. */
+/**
+ * Тестовый клиент: запись создаётся на самый конец дня и тут же отменяется.
+ * С настроенным ботом (продакшен) запись ждёт подтверждения в Telegram — проверяем этот экран и отказ от записи.
+ */
 const CLIENT_NAME = 'E2E Тест'
 const CLIENT_PHONE = '+998 90 000 00 00'
 const API_BASE = process.env.E2E_API_URL ?? 'http://localhost:4000'
@@ -69,8 +72,25 @@ test('запись: услуга, барбер, дата и время, подт
         response.ok(),
     )
     await page.getByRole('button', { name: 'Подтвердить запись' }).click()
-    const created = (await (await createResponse).json()) as { manageToken: string }
+    const created = (await (await createResponse).json()) as { manageToken: string; status: string }
     manageToken = created.manageToken
+
+    if (created.status === 'pending') {
+      const pending = page.getByRole('region', { name: 'Подтвердите запись в Telegram' })
+      await expect(pending).toBeVisible()
+      await expect(pending.getByRole('link', { name: 'Подтвердить в Telegram' })).toHaveAttribute(
+        'href',
+        new RegExp(`\\?start=b_${manageToken}$`),
+      )
+      await expect(pending.getByRole('timer')).toContainText(/\d+:\d{2}/)
+      await expect(pending).toContainText('Позвоните нам')
+      // Клиент передумал: неподтверждённая запись удаляется, время освобождается.
+      await pending.getByRole('button', { name: 'Отменить запись' }).click()
+      await expect(page.getByText('Запись отменена, время освобождено.')).toBeVisible()
+      expect((await request.get(`${API_BASE}/api/v1/bookings/${manageToken}`)).status()).toBe(404)
+      cancelled = true
+      return
+    }
 
     // Экран подтверждения: имя в заголовке, время и барбер в деталях, ссылка на управление записью.
     const success = page.getByRole('region', { name: `${CLIENT_NAME}, вы записаны` })

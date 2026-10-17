@@ -11,7 +11,14 @@ const TIMEZONE = 'Asia/Tashkent'
 type Service = { id: string; name: string; durationMin: number }
 type Barber = { id: string; name: string; serviceIds: string[] }
 type Slot = { startsAt: string; time: string; barberIds: string[] }
-type Booking = { status: string; startsAt: string; endsAt: string; manageToken: string; barber: { id: string } }
+type Booking = {
+  status: string
+  startsAt: string
+  endsAt: string
+  manageToken: string
+  barber: { id: string }
+  holdExpiresAt: string | null
+}
 
 function todayInTashkent(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(new Date())
@@ -27,7 +34,7 @@ function bookingBody(serviceId: string, barberId: string, startsAt: string, name
   return { serviceIds: [serviceId], barberId, startsAt, client: { name, phone } }
 }
 
-test('двойная запись даёт 409, перенос освобождает старое время', async ({ request }) => {
+test('двойная запись даёт 409; перенос (или отказ от неподтверждённой) освобождает время', async ({ request }) => {
   const services = await getJson<Service[]>(request, `${API}/services`)
   const service = services.find(s => s.name === 'Мужская стрижка') ?? services[0]
   if (!service) throw new Error('каталог услуг пуст')
@@ -87,8 +94,22 @@ test('двойная запись даёт 409, перенос освобожд�
     const busy = await getJson<{ slots: Slot[] }>(request, `${API}/availability?${base}&date=${date}`)
     expect(busy.slots.map(s => s.startsAt)).not.toContain(target!.startsAt)
 
+    const token = tokens[0]!
+    const created = await getJson<Booking>(request, `${API}/bookings/${token}`)
+    if (created.status === 'pending') {
+      // 3a. С ботом запись ждёт подтверждения в Telegram: время держится, перенести нельзя, отказ освобождает время.
+      expect(created.holdExpiresAt).not.toBeNull()
+      const move = await request.post(`${API}/bookings/${token}/reschedule`, { data: { startsAt: moveTo!.startsAt } })
+      expect(((await move.json()) as { code: string }).code).toBe('BOOKING_NOT_ACTIVE')
+      const discard = await request.post(`${API}/bookings/${token}/cancel`, { data: {} })
+      expect(discard.ok()).toBe(true)
+      tokens.splice(0, 1)
+      const freed = await getJson<{ slots: Slot[] }>(request, `${API}/availability?${base}&date=${date}`)
+      expect(freed.slots.map(s => Date.parse(s.startsAt))).toContain(Date.parse(target!.startsAt))
+      return
+    }
+
     // 3. Перенос на более раннее время.
-    const token = tokens[0]
     const moved = await request.post(`${API}/bookings/${token}/reschedule`, { data: { startsAt: moveTo!.startsAt } })
     expect(moved.status(), `перенос → ${moved.status()}`).toBe(200)
     const movedBooking = (await moved.json()) as Booking

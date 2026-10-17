@@ -45,7 +45,10 @@ export function textUpdate(
 }
 
 /** Контакт, отправленный кнопкой «Поделиться номером» (или пересланный чужой — userId другого человека). */
-export function contactUpdate(phoneNumber: string, options: { fromId?: number; userId?: number | null } = {}): Update {
+export function contactUpdate(
+  phoneNumber: string,
+  options: { fromId?: number; userId?: number | null; forwarded?: boolean } = {},
+): Update {
   const fromId = options.fromId ?? TG_USER_ID
   const messageId = nextId()
   const userId = options.userId === undefined ? fromId : options.userId
@@ -57,6 +60,7 @@ export function contactUpdate(phoneNumber: string, options: { fromId?: number; u
       chat: privateChat(fromId),
       from: userFrom(fromId),
       contact: { phone_number: phoneNumber, first_name: FIRST_NAME, ...(userId === null ? {} : { user_id: userId }) },
+      ...(options.forwarded ? { forward_origin: { type: 'user' as const, date: NOW_SEC, sender_user: userFrom(fromId) } } : {}),
     },
   }
 }
