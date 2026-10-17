@@ -1,6 +1,7 @@
 import { type BookingDto, formatLongDate, formatPrice } from '@barber/shared'
 
 import { bookingDateKey, formatTashkentTime } from '../bookings'
+import { Icon } from './Icon'
 import { SummaryList } from './SummaryList'
 
 type Props = {
@@ -18,7 +19,7 @@ export function SuccessView({ booking, onMyBookings }: Props) {
   return (
     <div className="success" role="status" aria-live="polite">
       <div className="success-icon" aria-hidden="true">
-        ✓
+        <Icon name="check" size={34} strokeWidth={2.5} />
       </div>
       <p className="success-text">Мы ждём вас! Напоминание придёт в Telegram.</p>
       <SummaryList items={items} />

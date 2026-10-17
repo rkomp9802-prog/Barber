@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 
+import { Icon } from './Icon'
+
 type Props = {
   selected: boolean
   onSelect: () => void
@@ -11,7 +13,7 @@ type Props = {
   kind: 'checkbox' | 'radio'
 }
 
-/** Строка списка в стиле Telegram с крупной зоной нажатия. */
+/** Строка единой панели (iOS): checkbox — кружок с галочкой, radio — галочка справа у выбранного. */
 export function ChoiceRow({ selected, onSelect, title, subtitle, meta, leading, kind }: Props) {
   return (
     <button
@@ -27,7 +29,9 @@ export function ChoiceRow({ selected, onSelect, title, subtitle, meta, leading, 
         {subtitle && <span className="choice-subtitle">{subtitle}</span>}
       </span>
       {meta && <span className="choice-meta">{meta}</span>}
-      <span className={`choice-mark choice-mark-${kind}`} aria-hidden="true" />
+      <span className={`choice-mark choice-mark-${kind}`} aria-hidden="true">
+        <Icon name="check" size={kind === 'checkbox' ? 14 : 20} strokeWidth={kind === 'checkbox' ? 3 : 2.25} />
+      </span>
     </button>
   )
 }

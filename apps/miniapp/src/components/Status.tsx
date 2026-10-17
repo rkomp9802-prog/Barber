@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { errorMessage } from '../errors'
+import { Icon } from './Icon'
 
 type SkeletonProps = { rows?: number; variant?: 'row' | 'chip'; label?: string }
 
@@ -49,7 +50,7 @@ export function Notice({ tone = 'warning', children, onDismiss }: NoticeProps) {
       <span>{children}</span>
       {onDismiss && (
         <button type="button" className="notice-close" aria-label="Скрыть сообщение" onClick={onDismiss}>
-          ×
+          <Icon name="close" size={16} />
         </button>
       )}
     </div>

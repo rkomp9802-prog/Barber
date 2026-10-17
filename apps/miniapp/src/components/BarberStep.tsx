@@ -1,6 +1,7 @@
 import { ANY_BARBER, type BarberDto, plural } from '@barber/shared'
 
 import { ChoiceRow } from './ChoiceRow'
+import { Icon } from './Icon'
 import { EmptyState } from './Status'
 
 type Props = {
@@ -44,7 +45,7 @@ export function BarberStep({ barbers, selectedId, onSelect }: Props) {
         onSelect={() => onSelect(ANY_BARBER)}
         leading={
           <span className="avatar avatar-any" aria-hidden="true">
-            ✂
+            <Icon name="users" size={20} />
           </span>
         }
         title="Любой свободный"

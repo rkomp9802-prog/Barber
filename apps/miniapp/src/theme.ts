@@ -58,6 +58,15 @@ export const FALLBACK_THEMES: Readonly<Record<ColorScheme, Required<ThemeParams>
   },
 }
 
+/**
+ * Цвета дизайна в стиле Apple (светлая — apple.com, тёмная — iOS). Остальные токены — в styles.css
+ * под :root[data-scheme]. Отсюда берутся цвета, которые нужны в JS: шапка Telegram и MainButton.
+ */
+export const APPLE_COLORS: Readonly<Record<ColorScheme, { ground: string; accent: string; inactive: string }>> = {
+  light: { ground: '#f5f5f7', accent: '#0071e3', inactive: '#aeaeb2' },
+  dark: { ground: '#000000', accent: '#0a84ff', inactive: '#48484a' },
+}
+
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i
 
 export function isHexColor(value: unknown): value is string {

@@ -1,24 +1,71 @@
-/* Значения по умолчанию переопределяются из themeParams Telegram (src/theme.ts). */
+/*
+ * Дизайн в стиле Apple (Liquid Glass): холодный серо-белый фон, единые белые панели с волосяными
+ * разделителями, иерархия весом и оттенком серого, один акцент. Стекло — только там, где слои
+ * действительно перекрываются (компактная шапка, нижняя панель).
+ * Схема (светлая/тёмная) приходит из Telegram: theme.ts ставит :root[data-scheme].
+ */
 :root {
-  --tg-bg: #ffffff;
-  --tg-text: #000000;
-  --tg-hint: #707579;
-  --tg-link: #2481cc;
-  --tg-button: #2481cc;
-  --tg-button-text: #ffffff;
-  --tg-secondary-bg: #f1f1f4;
-  --tg-section-bg: #ffffff;
-  --tg-destructive: #e53935;
-  --tg-accent: #2481cc;
+  /* Нейтральные — светлая схема */
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --press: rgba(0, 0, 0, 0.04);
+  --text: #1d1d1f;
+  --text-2: #6e6e73;
+  --text-3: #86868b;
+  --text-4: #aeaeb2;
+  --faint: #d2d2d7;
+  --hairline: rgba(0, 0, 0, 0.07);
+  --track: #e8e8ed;
+  --glass: rgba(245, 245, 247, 0.72);
 
-  --radius: 12px;
-  --radius-small: 10px;
-  --gap: 12px;
-  --touch: 48px;
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --tint-accent: color-mix(in srgb, var(--tg-button) 14%, transparent);
-  --tint-danger: color-mix(in srgb, var(--tg-destructive) 14%, transparent);
-  --separator: color-mix(in srgb, var(--tg-hint) 22%, transparent);
+  /* Акценты: только для действия, выбора и ошибки */
+  --accent: #0071e3;
+  --accent-tint: rgba(0, 113, 227, 0.1);
+  --danger: #ff3b30;
+  --danger-tint: rgba(255, 59, 48, 0.1);
+  --grad-cta: linear-gradient(135deg, #0071e3 0%, #5e5ce6 100%);
+
+  /* Шрифт: системный SF / Roboto — без «фирменного» Inter */
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+
+  /* Радиусы — именованные ступени, без промежуточных значений */
+  --r-pill: 999px;
+  --r-thumb: 12px;
+  --r-card: 18px;
+  --r-hero: 26px;
+
+  /* Тени — двухслойные, мягкие */
+  --sh-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.05);
+  --sh-cta: 0 20px 54px rgba(0, 113, 227, 0.24);
+
+  /* Движение */
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+
+  --pad-x: 16px;
+  --touch: 50px;
+}
+
+/* Тёмная схема — системные цвета iOS */
+:root[data-scheme='dark'] {
+  --bg: #000000;
+  --surface: #1c1c1e;
+  --press: rgba(255, 255, 255, 0.06);
+  --text: #f5f5f7;
+  --text-2: #98989d;
+  --text-3: #8e8e93;
+  --text-4: #636366;
+  --faint: #3a3a3c;
+  --hairline: rgba(255, 255, 255, 0.1);
+  --track: #2c2c2e;
+  --glass: rgba(18, 18, 20, 0.72);
+  --accent: #0a84ff;
+  --accent-tint: rgba(10, 132, 255, 0.16);
+  --danger: #ff453a;
+  --danger-tint: rgba(255, 69, 58, 0.16);
+  --grad-cta: linear-gradient(135deg, #0a84ff 0%, #5e5ce6 100%);
+  --sh-card: none;
+  --sh-cta: 0 18px 48px rgba(10, 132, 255, 0.28);
 }
 
 *,
@@ -31,12 +78,13 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background: var(--tg-secondary-bg);
-  color: var(--tg-text);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font);
-  font-size: 16px;
-  line-height: 1.35;
+  font-size: 17px;
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -51,8 +99,13 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--tg-button);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.icon {
+  flex: none;
+  display: block;
 }
 
 .visually-hidden {
@@ -64,17 +117,25 @@ button {
   white-space: nowrap;
 }
 
-.muted,
-.hint {
-  color: var(--tg-hint);
+.muted {
+  color: var(--text-2);
 }
 
 .hint {
   margin: 0 4px 10px;
-  font-size: 14px;
+  color: var(--text-2);
+  font-size: 15px;
 }
 
-/* ---------- Экран ---------- */
+.price,
+.time-chip,
+.date-day,
+.summary-row dd,
+.bottom-summary {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Экран и заголовки ---------- */
 
 .screen {
   display: flex;
@@ -85,133 +146,287 @@ button {
   margin: 0 auto;
 }
 
-.screen-header {
-  padding: 16px 16px 8px;
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--text-3);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
-.screen-title {
+.large-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 34px;
   font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.022em;
+}
+
+.lead {
+  margin: 8px 0 0;
+  color: var(--text-2);
+  font-size: 17px;
   letter-spacing: -0.01em;
 }
 
-.screen-subtitle {
-  margin: 0 0 2px;
-  color: var(--tg-hint);
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.screen-header {
+  padding: 18px var(--pad-x) 14px;
 }
 
 .screen-body {
   flex: 1;
-  padding: 8px 16px 24px;
+  padding: 4px var(--pad-x) 28px;
+}
+
+/* Компактная шапка: появляется, когда крупный заголовок ушёл вверх. Стекло — она лежит поверх контента. */
+.nav-compact {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 0;
+  overflow: visible;
+}
+
+.nav-compact::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 44px;
+  background: var(--glass);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--hairline);
+  opacity: 0;
+  transition: opacity 0.25s var(--ease-out-quart);
+}
+
+.nav-compact-title {
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.25s var(--ease-out-quart),
+    transform 0.25s var(--ease-out-quart);
+}
+
+.nav-compact.is-visible::before,
+.nav-compact.is-visible .nav-compact-title {
+  opacity: 1;
+  transform: none;
 }
 
 .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   min-height: 44px;
-  margin: -8px 0 4px -8px;
-  padding: 0 8px;
+  margin: -8px 0 6px -10px;
+  padding: 0 8px 0 4px;
   border: 0;
   background: none;
-  color: var(--tg-link);
+  color: var(--accent);
+  font-size: 17px;
 }
 
 .dev-banner {
-  padding: 8px 16px;
-  background: var(--tint-accent);
-  color: var(--tg-text);
+  margin: 12px var(--pad-x) 0;
+  color: var(--text-3);
   font-size: 13px;
+  line-height: 1.45;
 }
 
 /* ---------- Главная ---------- */
 
 .home-header {
-  padding: 32px 16px 20px;
-  text-align: center;
+  padding: 36px var(--pad-x) 26px;
 }
 
-.home-header .muted {
-  margin: 6px 0 0;
-}
-
-.home-logo {
+.home-body {
   display: grid;
-  place-items: center;
-  width: 72px;
-  height: 72px;
-  margin: 0 auto 14px;
-  border-radius: 50%;
-  background: var(--tg-button);
-  color: var(--tg-button-text);
-  font-size: 34px;
+  gap: 18px;
+  padding: 0 var(--pad-x) 32px;
 }
 
-.home-actions {
-  display: grid;
-  gap: var(--gap);
-  padding: 0 16px 24px;
-}
-
-.home-action {
-  display: grid;
-  gap: 4px;
-  min-height: 88px;
-  padding: 18px;
+/* Единственное цветное место экрана */
+.hero-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 112px;
+  padding: 22px 20px;
+  overflow: hidden;
   border: 0;
-  border-radius: var(--radius);
-  background: var(--tg-section-bg);
+  border-radius: var(--r-hero);
+  background: var(--grad-cta);
+  box-shadow: var(--sh-cta);
+  color: #ffffff;
   text-align: left;
-  transition: transform 120ms ease;
+  transition: transform 0.2s var(--ease-out-quart);
 }
 
-.home-action:active {
+/* Мягкие световые пятна: стеклу иконки есть что преломлять */
+.hero-card::before,
+.hero-card::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(28px);
+  pointer-events: none;
+}
+
+.hero-card::before {
+  top: -40px;
+  right: -30px;
+  width: 160px;
+  height: 160px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.hero-card::after {
+  bottom: -60px;
+  left: 30%;
+  width: 140px;
+  height: 140px;
+  background: rgba(94, 92, 230, 0.55);
+}
+
+.hero-icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--r-thumb);
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.hero-text {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: 1;
+  gap: 3px;
+}
+
+.hero-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.hero-subtitle {
+  font-size: 15px;
+  opacity: 0.82;
+}
+
+.hero-chevron {
+  position: relative;
+  z-index: 1;
+  opacity: 0.7;
+}
+
+.hero-card:active {
   transform: scale(0.98);
 }
 
-.home-action-primary {
-  background: var(--tg-button);
-  color: var(--tg-button-text);
-}
+/* ---------- Единая панель (вместо россыпи карточек) ---------- */
 
-.home-action-title {
-  font-size: 19px;
-  font-weight: 650;
-}
-
-.home-action-text {
-  font-size: 14px;
-  opacity: 0.75;
-}
-
-/* ---------- Списки выбора ---------- */
-
-.list {
+.panel,
+.list,
+.summary-list,
+.booking-list {
   overflow: hidden;
-  border-radius: var(--radius);
-  background: var(--tg-section-bg);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  box-shadow: var(--sh-card);
 }
+
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 16px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  transition: background-color 0.15s var(--ease-out-quart);
+}
+
+.nav-row:active {
+  background: var(--press);
+}
+
+.nav-row-icon {
+  color: var(--accent);
+}
+
+.nav-row-text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+
+.nav-row-title {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.nav-row-subtitle {
+  color: var(--text-2);
+  font-size: 15px;
+}
+
+.nav-row-chevron {
+  color: var(--faint);
+}
+
+/* ---------- Строки выбора ---------- */
 
 .choice-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   width: 100%;
-  min-height: 56px;
-  padding: 10px 14px;
+  min-height: 60px;
+  padding: 11px 16px;
   border: 0;
-  border-bottom: 1px solid var(--separator);
   background: transparent;
   text-align: left;
+  transition: background-color 0.15s var(--ease-out-quart);
 }
 
-.choice-row:last-child {
-  border-bottom: 0;
+/* Волосяной разделитель с отступом слева, как в списках iOS */
+.choice-row + .choice-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 16px;
+  height: 1px;
+  background: var(--hairline);
 }
 
 .choice-row:active {
-  background: var(--tint-accent);
+  background: var(--press);
 }
 
 .choice-text {
@@ -222,19 +437,20 @@ button {
 }
 
 .choice-title {
-  font-weight: 560;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .choice-subtitle {
-  color: var(--tg-hint);
-  font-size: 14px;
+  color: var(--text-2);
+  font-size: 15px;
 }
 
 .choice-meta {
   display: grid;
   justify-items: end;
   gap: 2px;
-  font-size: 14px;
+  font-size: 15px;
   white-space: nowrap;
 }
 
@@ -243,22 +459,33 @@ button {
 }
 
 .choice-mark {
+  display: grid;
   flex: none;
-  width: 22px;
-  height: 22px;
-  border: 2px solid var(--separator);
-  border-radius: 50%;
-  transition: background-color 120ms ease, border-color 120ms ease;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: transparent;
+  transition:
+    background-color 0.2s var(--ease-out-quart),
+    border-color 0.2s var(--ease-out-quart),
+    color 0.2s var(--ease-out-quart);
 }
 
+/* Множественный выбор — кружок, выбранный заливается акцентом */
 .choice-mark-checkbox {
-  border-radius: 6px;
+  border: 1.5px solid var(--faint);
+  border-radius: 50%;
 }
 
-.is-selected .choice-mark {
-  border-color: var(--tg-button);
-  background: var(--tg-button);
-  box-shadow: inset 0 0 0 3px var(--tg-section-bg);
+.is-selected .choice-mark-checkbox {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* Один вариант — только галочка акцентом у выбранной строки */
+.is-selected .choice-mark-radio {
+  color: var(--accent);
 }
 
 .avatar {
@@ -269,9 +496,10 @@ button {
   height: 44px;
   border-radius: 50%;
   object-fit: cover;
-  background: var(--tint-accent);
-  color: var(--tg-accent);
-  font-weight: 650;
+  background: var(--track);
+  color: var(--text-2);
+  font-size: 15px;
+  font-weight: 600;
 }
 
 /* ---------- Дата и время ---------- */
@@ -292,198 +520,237 @@ button {
 
 .date-chip,
 .time-chip {
-  min-height: var(--touch);
+  min-height: 46px;
   border: 0;
-  border-radius: var(--radius-small);
-  background: var(--tg-section-bg);
-  transition: background-color 120ms ease, transform 120ms ease;
+  border-radius: var(--r-thumb);
+  background: var(--surface);
+  box-shadow: var(--sh-card);
+  transition:
+    background-color 0.2s var(--ease-out-quart),
+    color 0.2s var(--ease-out-quart),
+    transform 0.2s var(--ease-out-quart);
 }
 
 .date-chip {
   display: grid;
   place-items: center;
-  gap: 2px;
-  min-height: 60px;
-  padding: 6px 0;
+  gap: 1px;
+  min-height: 64px;
+  padding: 8px 0;
 }
 
 .date-weekday {
-  color: var(--tg-hint);
+  color: var(--text-3);
   font-size: 12px;
+  font-weight: 500;
 }
 
 .date-day {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .time-chip {
-  font-weight: 560;
-  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
-.date-chip:active,
+.date-chip:active:not(:disabled),
 .time-chip:active {
   transform: scale(0.96);
 }
 
 .date-chip:disabled {
-  opacity: 0.35;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-4);
   cursor: default;
+}
+
+.date-chip:disabled .date-weekday {
+  color: var(--text-4);
 }
 
 .date-chip.is-selected,
 .time-chip.is-selected {
-  background: var(--tg-button);
-  color: var(--tg-button-text);
+  background: var(--accent);
+  color: #ffffff;
 }
 
 .date-chip.is-selected .date-weekday {
-  color: inherit;
-  opacity: 0.8;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* ---------- Форма ---------- */
 
 .form {
   display: grid;
-  gap: 16px;
+  gap: 20px;
 }
 
 .field {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
 .field-label {
   margin-left: 4px;
-  color: var(--tg-hint);
-  font-size: 14px;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .input {
   min-height: var(--touch);
-  padding: 0 14px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-small);
-  background: var(--tg-section-bg);
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--r-thumb);
+  background: var(--surface);
+  box-shadow:
+    var(--sh-card),
+    inset 0 0 0 1px transparent;
   font-size: 17px;
+  transition: box-shadow 0.2s var(--ease-out-quart);
 }
 
 .input:focus {
-  border-color: var(--tg-button);
   outline: none;
+  box-shadow:
+    0 0 0 4px var(--accent-tint),
+    inset 0 0 0 1px var(--accent);
+}
+
+.input[readonly] {
+  color: var(--text-2);
 }
 
 .input[aria-invalid='true'] {
-  border-color: var(--tg-destructive);
+  box-shadow:
+    0 0 0 4px var(--danger-tint),
+    inset 0 0 0 1px var(--danger);
 }
 
 .field-error,
 .field-hint {
   margin: 0 4px;
   font-size: 13px;
+  line-height: 1.45;
 }
 
 .field-error {
-  color: var(--tg-destructive);
+  color: var(--danger);
 }
 
 .field-hint {
-  color: var(--tg-hint);
+  color: var(--text-3);
 }
 
 /* ---------- Сводка ---------- */
 
 .summary-list {
-  margin: 0 0 12px;
-  padding: 4px 14px;
-  border-radius: var(--radius);
-  background: var(--tg-section-bg);
+  margin: 0 0 14px;
+  padding: 0 16px;
 }
 
 .summary-row {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--separator);
+  padding: 13px 0;
 }
 
-.summary-row:last-child {
-  border-bottom: 0;
+.summary-row + .summary-row {
+  border-top: 1px solid var(--hairline);
 }
 
 .summary-row dt {
-  color: var(--tg-hint);
+  color: var(--text-2);
 }
 
 .summary-row dd {
   margin: 0;
+  font-weight: 500;
   text-align: right;
 }
 
 .success {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   text-align: center;
 }
 
 .success .summary-list {
+  margin-top: 14px;
   text-align: left;
 }
 
 .success-icon {
   display: grid;
   place-items: center;
-  width: 72px;
-  height: 72px;
-  margin: 8px auto 0;
+  width: 76px;
+  height: 76px;
+  margin: 12px auto 6px;
   border-radius: 50%;
-  background: var(--tg-button);
-  color: var(--tg-button-text);
-  font-size: 36px;
+  background: var(--accent);
+  box-shadow: var(--sh-cta);
+  color: #ffffff;
 }
 
 .success-text {
   margin: 0;
-  color: var(--tg-hint);
+  color: var(--text-2);
 }
 
-/* ---------- Нижняя панель ---------- */
+/* ---------- Нижняя панель (стекло: лежит поверх прокручиваемого контента) ---------- */
 
 .bottom-bar {
   position: sticky;
   bottom: 0;
+  z-index: 10;
   display: grid;
   gap: 10px;
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--separator);
-  background: var(--tg-bg);
+  padding: 12px var(--pad-x) max(12px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--hairline);
+  background: var(--glass);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 
 .bottom-summary {
-  font-size: 14px;
+  color: var(--text-2);
+  font-size: 15px;
   text-align: center;
+}
+
+.bottom-summary strong {
+  color: var(--text);
 }
 
 /* ---------- Кнопки ---------- */
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: 44px;
-  padding: 0 16px;
+  padding: 0 20px;
   border: 0;
-  border-radius: var(--radius-small);
+  border-radius: var(--r-pill);
   font-weight: 600;
-  transition: opacity 120ms ease, transform 120ms ease;
+  letter-spacing: -0.01em;
+  transition:
+    opacity 0.15s var(--ease-out-quart),
+    transform 0.15s var(--ease-out-quart),
+    background-color 0.15s var(--ease-out-quart);
 }
 
 .btn:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .btn:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: default;
 }
 
@@ -493,18 +760,18 @@ button {
 }
 
 .btn-primary {
-  background: var(--tg-button);
-  color: var(--tg-button-text);
+  background: var(--accent);
+  color: #ffffff;
 }
 
 .btn-secondary {
-  background: var(--tint-accent);
-  color: var(--tg-link);
+  background: var(--track);
+  color: var(--accent);
 }
 
 .btn-danger {
-  background: var(--tint-danger);
-  color: var(--tg-destructive);
+  background: var(--track);
+  color: var(--danger);
 }
 
 /* ---------- Состояния ---------- */
@@ -513,7 +780,7 @@ button {
   display: grid;
   justify-items: center;
   gap: 12px;
-  padding: 28px 16px;
+  padding: 36px 16px;
   text-align: center;
 }
 
@@ -522,44 +789,52 @@ button {
 }
 
 .state-title {
+  font-size: 19px;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .state-error p {
-  color: var(--tg-destructive);
+  color: var(--danger);
 }
 
 .notice {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin-bottom: 12px;
-  padding: 12px 14px;
-  border-radius: var(--radius-small);
+  margin-bottom: 14px;
+  padding: 13px 14px 13px 16px;
+  border-radius: var(--r-thumb);
   font-size: 15px;
+  line-height: 1.45;
 }
 
 .notice span {
   flex: 1;
 }
 
-.notice-warning,
-.notice-danger {
-  background: var(--tint-danger);
+.notice-info {
+  background: var(--surface);
+  box-shadow: var(--sh-card);
+  color: var(--text);
 }
 
-.notice-info {
-  background: var(--tint-accent);
+.notice-warning,
+.notice-danger {
+  background: var(--danger-tint);
+  color: var(--text);
 }
 
 .notice-close {
-  min-width: 32px;
-  min-height: 32px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   margin: -6px -8px -6px 0;
   border: 0;
+  border-radius: 50%;
   background: none;
-  color: var(--tg-hint);
-  font-size: 20px;
+  color: var(--text-3);
 }
 
 .skeleton-list {
@@ -573,34 +848,31 @@ button {
 
 .skeleton {
   height: 60px;
-  border-radius: var(--radius-small);
-  background: var(--tg-section-bg);
-  animation: pulse 1.2s ease-in-out infinite;
+  border-radius: var(--r-thumb);
+  background: var(--track);
+  animation: pulse 1.4s ease-in-out infinite;
 }
 
 .skeleton-chip .skeleton {
-  height: var(--touch);
+  height: 46px;
 }
 
 @keyframes pulse {
   50% {
-    opacity: 0.45;
+    opacity: 0.5;
   }
 }
 
-/* ---------- Мои записи ---------- */
-
-.booking-list {
-  display: grid;
-  gap: var(--gap);
-}
+/* ---------- Мои записи: одна панель, записи разделены волосяной линией ---------- */
 
 .booking-card {
   display: grid;
-  gap: 6px;
-  padding: 14px;
-  border-radius: var(--radius);
-  background: var(--tg-section-bg);
+  gap: 4px;
+  padding: 16px;
+}
+
+.booking-card + .booking-card {
+  border-top: 1px solid var(--hairline);
 }
 
 .booking-card p {
@@ -608,21 +880,26 @@ button {
 }
 
 .booking-card.is-past {
-  opacity: 0.7;
+  color: var(--text-2);
 }
 
 .booking-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
 }
 
 .booking-when {
-  font-weight: 650;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .booking-services {
+  font-size: 15px;
+}
+
+.booking-card .muted {
   font-size: 15px;
 }
 
@@ -630,35 +907,38 @@ button {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 10px;
 }
 
+.booking-actions .btn {
+  min-height: 40px;
+  font-size: 15px;
+}
+
+.booking-card .field-hint {
+  margin: 6px 0 0;
+}
+
+/* Статус — серым; акцент только у предстоящей подтверждённой записи */
 .badge {
   flex: none;
-  padding: 3px 8px;
-  border-radius: 999px;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  background: var(--track);
+  color: var(--text-2);
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .badge-accent {
-  background: var(--tint-accent);
-  color: var(--tg-accent);
-}
-
-.badge-success {
-  background: color-mix(in srgb, #31b545 16%, transparent);
-  color: #2a9d3c;
-}
-
-.badge-muted {
-  background: var(--separator);
-  color: var(--tg-hint);
+  background: var(--accent-tint);
+  color: var(--accent);
 }
 
 .badge-danger {
-  background: var(--tint-danger);
-  color: var(--tg-destructive);
+  background: var(--danger-tint);
+  color: var(--danger);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -667,5 +947,20 @@ button {
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .nav-compact::before,
+  .bottom-bar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--bg);
+  }
+
+  .hero-icon {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.2);
   }
 }

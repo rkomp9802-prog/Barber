@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import type { PhoneState } from '../hooks/useVerifiedPhone'
 import { nextPhoneValue } from '../phoneInput'
+import { Icon } from './Icon'
 
 type Props = {
   name: string
@@ -34,7 +35,14 @@ function VerifiedPhoneField({ state, onRequest }: { state: PhoneState; onRequest
     <div className="field">
       <span className="field-label">Телефон</span>
       <button type="button" className="btn btn-primary btn-block" onClick={onRequest} disabled={waiting}>
-        {waiting ? 'Ждём номер…' : '📱 Поделиться номером'}
+        {waiting ? (
+          'Ждём номер…'
+        ) : (
+          <>
+            <Icon name="phone" size={18} />
+            Поделиться номером
+          </>
+        )}
       </button>
       {state.status === 'unverified' && state.error ? (
         <span className="field-error" role="alert">

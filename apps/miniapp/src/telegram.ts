@@ -1,4 +1,4 @@
-import { applyCssVars, type ColorScheme, themeToCssVars, type ThemeParams } from './theme'
+import { APPLE_COLORS, applyCssVars, type ColorScheme, themeToCssVars, type ThemeParams } from './theme'
 
 /**
  * Тонкая типизированная обёртка над официальным скриптом telegram-web-app.js.
@@ -99,12 +99,28 @@ function browserScheme(): ColorScheme {
   return prefersDark ? 'dark' : 'light'
 }
 
-/** Применяет тему Telegram (или запасную тему браузера) к :root. */
+function currentScheme(): ColorScheme {
+  const app = webApp()
+  return isInsideTelegram() && app ? app.colorScheme : browserScheme()
+}
+
+/**
+ * Применяет тему к :root: светлая или тёмная схема берётся из Telegram (или браузера),
+ * а палитра — своя, в стиле Apple (data-scheme → токены в styles.css). Шапка Telegram — в цвет фона.
+ */
 export function applyTheme(): void {
   const app = webApp()
-  const scheme = isInsideTelegram() && app ? app.colorScheme : browserScheme()
+  const scheme = currentScheme()
   const params = isInsideTelegram() ? app?.themeParams : undefined
   applyCssVars(themeToCssVars(params, scheme), document.documentElement)
+  document.documentElement.dataset.scheme = scheme
+  if (!app || !isInsideTelegram()) return
+  // Произвольный цвет шапки — с Bot API 6.9; раньше только ключевые слова темы.
+  const ground = supports('6.9') ? APPLE_COLORS[scheme].ground : 'secondary_bg_color'
+  if (supports('6.1')) {
+    app.setHeaderColor?.(ground)
+    app.setBackgroundColor?.(ground)
+  }
 }
 
 /** Вызывается один раз при старте: ready, expand, тема и подписка на её смену. */
@@ -118,10 +134,6 @@ export function initTelegram(): void {
   app.ready()
   app.expand()
   app.onEvent('themeChanged', applyTheme)
-  if (supports('6.1')) {
-    app.setHeaderColor?.('secondary_bg_color')
-    app.setBackgroundColor?.('secondary_bg_color')
-  }
 }
 
 export function hapticSelection(): void {
@@ -166,15 +178,15 @@ export function setMainButton(state: MainButtonState | null): boolean {
     app.MainButton.hide()
     return true
   }
-  // Telegram не затемняет неактивную кнопку сам — красим её в цвет подсказки.
+  // Кнопка — в акцент дизайна; неактивную Telegram сам не затемняет — красим в серый.
+  const colors = APPLE_COLORS[currentScheme()]
   const active = state.enabled || state.loading
-  const color = active ? app.themeParams.button_color : app.themeParams.hint_color
   app.MainButton.setParams({
     text: state.text,
     is_active: state.enabled && !state.loading,
     is_visible: true,
-    ...(color ? { color } : {}),
-    ...(app.themeParams.button_text_color ? { text_color: app.themeParams.button_text_color } : {}),
+    color: active ? colors.accent : colors.inactive,
+    text_color: '#ffffff',
   })
   if (state.loading) app.MainButton.showProgress(false)
   else app.MainButton.hideProgress()
