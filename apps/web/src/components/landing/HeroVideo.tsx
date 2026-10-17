@@ -3,6 +3,8 @@
 import { useEffect, useRef } from 'react'
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
+/** События, которые браузер считает жестом пользователя (разрешают play()). */
+const GESTURE_EVENTS = ['pointerdown', 'touchstart', 'keydown'] as const
 
 type Props = {
   className?: string
@@ -11,7 +13,7 @@ type Props = {
 /**
  * Фоновое видео героя: без звука, по кругу, поверх видео — контент секции.
  * Не играет при prefers-reduced-motion (остаётся постер), на паузе вне экрана и в скрытой вкладке.
- * Ошибки автоплея (браузер запретил) молча игнорируются: тогда остаётся постер.
+ * Если браузер запретил автоплей, остаётся постер, а видео запускается при первом касании страницы.
  */
 export function HeroVideo({ className }: Props) {
   const ref = useRef<HTMLVideoElement>(null)
@@ -27,10 +29,23 @@ export function HeroVideo({ className }: Props) {
     let reduced = media.matches
     let inView = true
 
+    // Встроенный браузер Telegram (Android WebView) и режим энергосбережения запрещают автоплей даже без звука:
+    // тогда запускаем видео при первом касании страницы — жест пользователя снимает запрет.
+    const onFirstGesture = () => {
+      removeGestureListeners()
+      sync()
+    }
+    const removeGestureListeners = () => {
+      for (const event of GESTURE_EVENTS) document.removeEventListener(event, onFirstGesture)
+    }
+    const waitForGesture = () => {
+      for (const event of GESTURE_EVENTS) document.addEventListener(event, onFirstGesture, { passive: true })
+    }
+
     const sync = () => {
       const shouldPlay = !reduced && inView && !document.hidden
       if (shouldPlay) {
-        video.play().catch(() => {})
+        video.play().catch(waitForGesture)
       } else {
         video.pause()
       }
@@ -61,6 +76,7 @@ export function HeroVideo({ className }: Props) {
 
     return () => {
       observer?.disconnect()
+      removeGestureListeners()
       media.removeEventListener('change', onMotionChange)
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
