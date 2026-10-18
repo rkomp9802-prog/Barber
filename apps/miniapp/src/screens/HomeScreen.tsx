@@ -1,44 +1,49 @@
+import { useEffect } from 'react'
+
 import { DevBanner } from '../components/DevBanner'
+import { HeroVideo } from '../components/HeroVideo'
 import { Icon } from '../components/Icon'
-import { getTelegramFirstName } from '../telegram'
+import { getTelegramFirstName, setChromeColor } from '../telegram'
+
+/** Шапка Telegram над видео — чёрная, в тон затемнению. */
+const VIDEO_CHROME = '#000000'
 
 type Props = {
   onBook: () => void
   onMyBookings: () => void
 }
 
-/** Главная: одно цветное место — карточка «Записаться», остальное — серая шкала на белой панели. */
+/**
+ * Главная: видео барбершопа на весь экран, затемнение снизу, белый текст.
+ * Главное действие — белая «пилюля» «Записаться»; «Мои записи» — стеклянная панель поверх видео.
+ */
 export function HomeScreen({ onBook, onMyBookings }: Props) {
   const name = getTelegramFirstName()
+  useEffect(() => {
+    setChromeColor(VIDEO_CHROME)
+    return () => setChromeColor(null)
+  }, [])
   return (
-    <div className="screen">
+    <div className="home-full">
+      <HeroVideo className="home-full-video" />
+      <div className="home-full-shade" aria-hidden="true" />
       <DevBanner />
-      <header className="home-header">
+      <main className="home-full-content">
         <p className="eyebrow">{name ? 'Барбершоп · Ташкент' : 'Ташкент'}</p>
         <h1 className="large-title">{name ? `Здравствуйте, ${name}` : 'Барбершоп'}</h1>
         <p className="lead">Стрижки и бритьё. Запись — за минуту.</p>
-      </header>
-      <main className="home-body">
-        <button type="button" className="hero-card" onClick={onBook}>
-          <span className="hero-icon">
-            <Icon name="scissors" size={26} />
-          </span>
-          <span className="hero-text">
-            <span className="hero-title">Записаться</span>
-            <span className="hero-subtitle">Услуга, барбер и удобное время</span>
-          </span>
-          <Icon name="chevronRight" className="hero-chevron" />
+        <button type="button" className="hero-cta" onClick={onBook}>
+          <Icon name="scissors" size={20} />
+          Записаться
         </button>
-        <div className="panel">
-          <button type="button" className="nav-row" onClick={onMyBookings}>
-            <Icon name="calendar" className="nav-row-icon" />
-            <span className="nav-row-text">
-              <span className="nav-row-title">Мои записи</span>
-              <span className="nav-row-subtitle">Посмотреть, перенести или отменить</span>
-            </span>
-            <Icon name="chevronRight" size={18} className="nav-row-chevron" />
-          </button>
-        </div>
+        <button type="button" className="glass-row" onClick={onMyBookings}>
+          <Icon name="calendar" />
+          <span className="nav-row-text">
+            <span className="nav-row-title">Мои записи</span>
+            <span className="glass-row-subtitle">Посмотреть, перенести или отменить</span>
+          </span>
+          <Icon name="chevronRight" size={18} className="glass-row-chevron" />
+        </button>
       </main>
     </div>
   )

@@ -99,6 +99,9 @@ function browserScheme(): ColorScheme {
   return prefersDark ? 'dark' : 'light'
 }
 
+/** Цвет шапки Telegram для текущего экрана (главная с видео — чёрная); null — цвет фона темы. */
+let chromeOverride: string | null = null
+
 function currentScheme(): ColorScheme {
   const app = webApp()
   return isInsideTelegram() && app ? app.colorScheme : browserScheme()
@@ -116,11 +119,17 @@ export function applyTheme(): void {
   document.documentElement.dataset.scheme = scheme
   if (!app || !isInsideTelegram()) return
   // Произвольный цвет шапки — с Bot API 6.9; раньше только ключевые слова темы.
-  const ground = supports('6.9') ? APPLE_COLORS[scheme].ground : 'secondary_bg_color'
+  const ground = supports('6.9') ? (chromeOverride ?? APPLE_COLORS[scheme].ground) : 'secondary_bg_color'
   if (supports('6.1')) {
     app.setHeaderColor?.(ground)
     app.setBackgroundColor?.(ground)
   }
+}
+
+/** Экран просит свой цвет шапки Telegram (null — вернуть цвет темы). */
+export function setChromeColor(color: string | null): void {
+  chromeOverride = color
+  applyTheme()
 }
 
 /** Вызывается один раз при старте: ready, expand, тема и подписка на её смену. */

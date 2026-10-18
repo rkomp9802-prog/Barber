@@ -245,104 +245,121 @@ button {
   line-height: 1.45;
 }
 
-/* ---------- Главная ---------- */
+/* ---------- Главная: видео на весь экран ---------- */
 
-.home-header {
-  padding: 36px var(--pad-x) 26px;
-}
-
-.home-body {
-  display: grid;
-  gap: 18px;
-  padding: 0 var(--pad-x) 32px;
-}
-
-/* Единственное цветное место экрана */
-.hero-card {
+/* Видео и затемнение закреплены за экраном; контент прижат к низу — туда, где затемнение плотнее */
+.home-full {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: 16px;
-  min-height: 112px;
-  padding: 22px 20px;
-  overflow: hidden;
-  border: 0;
-  border-radius: var(--r-hero);
-  background: var(--grad-cta);
-  box-shadow: var(--sh-cta);
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: var(--tg-viewport-stable-height, 100dvh);
+  max-width: 560px;
+  margin: 0 auto;
+  background: #000000;
   color: #ffffff;
-  text-align: left;
+  isolation: isolate;
+}
+
+.home-full-video,
+.home-full-shade {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.home-full-video {
+  z-index: -2;
+  object-fit: cover;
+}
+
+.home-full-shade {
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.15) 30%, rgba(0, 0, 0, 0.55) 60%, rgba(0, 0, 0, 0.88) 100%);
+}
+
+.home-full .dev-banner {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.home-full-content {
+  display: grid;
+  gap: 2px;
+  margin-top: auto;
+  padding: 32px var(--pad-x) max(24px, env(safe-area-inset-bottom));
+}
+
+.home-full .eyebrow {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.home-full .large-title {
+  font-size: 40px;
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.3);
+}
+
+.home-full .lead {
+  margin-bottom: 22px;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+/* Белая «пилюля» на видео — главное действие */
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 54px;
+  margin-bottom: 12px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  color: #1d1d1f;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   transition: transform 0.2s var(--ease-out-quart);
 }
 
-/* Мягкие световые пятна: стеклу иконки есть что преломлять */
-.hero-card::before,
-.hero-card::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(28px);
-  pointer-events: none;
+.hero-cta:active {
+  transform: scale(0.97);
 }
 
-.hero-card::before {
-  top: -40px;
-  right: -30px;
-  width: 160px;
-  height: 160px;
-  background: rgba(255, 255, 255, 0.28);
+/* Стекло поверх видео: слои действительно перекрываются */
+.glass-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--r-card);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  color: #ffffff;
+  text-align: left;
+  transition:
+    transform 0.2s var(--ease-out-quart),
+    background-color 0.2s var(--ease-out-quart);
 }
 
-.hero-card::after {
-  bottom: -60px;
-  left: 30%;
-  width: 140px;
-  height: 140px;
-  background: rgba(94, 92, 230, 0.55);
-}
-
-.hero-icon {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: var(--r-thumb);
-  background: rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.hero-text {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  flex: 1;
-  gap: 3px;
-}
-
-.hero-title {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.hero-subtitle {
-  font-size: 15px;
-  opacity: 0.82;
-}
-
-.hero-chevron {
-  position: relative;
-  z-index: 1;
-  opacity: 0.7;
-}
-
-.hero-card:active {
+.glass-row:active {
+  background: rgba(255, 255, 255, 0.2);
   transform: scale(0.98);
+}
+
+.glass-row-subtitle {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 15px;
+}
+
+.glass-row-chevron {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* ---------- Единая панель (вместо россыпи карточек) ---------- */
@@ -958,9 +975,9 @@ button {
     background: var(--bg);
   }
 
-  .hero-icon {
+  .glass-row {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(28, 28, 30, 0.92);
   }
 }
